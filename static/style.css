@@ -134,6 +134,9 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 .lista span, .bat-salud .par span { white-space: nowrap; }
 .lista .par, .bat-salud .par { font-size: 15px; line-height: 1.35; gap: 6px; }
 .bat-salud .par { gap: 14px; }
+.bat-salud .tabla { display: grid; column-gap: 12px; row-gap: 1px; font-size: 15px; color: var(--sub); align-items: baseline; }
+.bat-salud .tabla i { font-style: normal; font-size: 12px; color: var(--etiqueta); text-transform: uppercase; text-align: right; }
+.bat-salud .tabla b { color: var(--texto); font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
 .lista .par.cero { opacity: .45; }
 .bat.viejo > div { opacity: .5; }
 .bat-aviso { font-size: 15px; color: var(--tenue); margin-top: 8px; }

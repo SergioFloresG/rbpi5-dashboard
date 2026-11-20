@@ -44,14 +44,14 @@ sudo systemctl restart pi-dashboard
 | `ECOFLOW_EMAIL`, `ECOFLOW_PASSWORD` | Cuenta de la app EcoFlow para la tarjeta de batería (vacío = tarjeta oculta) |
 | `ECOFLOW_SN` | Número de serie de la batería (app EcoFlow > dispositivo > Ajustes > Información) |
 | `ECOFLOW_API_HOST` | `api.ecoflow.com` (América/global) o `api-e.ecoflow.com` (Europa) |
-| `ECOFLOW_CAPACIDAD_WH` | Capacidad para estimar los Wh (1024, Delta 3 Plus) |
+| `ECOFLOW_CAPACIDAD_WH` | Capacidad en Wh si la batería no la reporta (1024, Delta 3 Plus) |
 | `ECOFLOW_DEMO` | `1` muestra datos simulados sin conectarse a EcoFlow |
 
 Después de cambiarla: `sudo systemctl restart pi-dashboard`.
 
 ## Batería EcoFlow
 
-Tarjeta arriba del panel derecho (abajo en vertical) para la Delta 3 / Delta 3 Plus: % de carga, tiempo para lleno o vacío, entrada (Solar 1, Solar 2, AC, batería extra), salida (AC, USB-C, USB-A, 12V), salud, ciclos y temperatura.
+Tarjeta arriba del panel derecho (abajo en vertical) para la Delta 3 / Delta 3 Plus: % de carga, tiempo para lleno o vacío, entrada (Solar 1, Solar 2, AC, batería extra), salida (AC, USB-C, USB-A, 12V), salud, ciclos y temperatura. Con batería adicional, el % y los Wh son del conjunto y la salud, ciclos y temperatura se muestran por batería (llegan como heartbeats BMS con `num` 1, 2…).
 
 Usa la misma nube que la app de EcoFlow (no la API de desarrolladores ni Home Assistant): login en `/auth/login`, credenciales MQTT en `/iot-auth/app/certification` y datos en tiempo real por MQTT TLS (`/app/device/property/<SN>`). Los mensajes protobuf se decodifican en `ecoflow.py` con los campos de `ecoflow_campos.py`, tomados de [hassio-ecoflow-cloud](https://github.com/tolwi/hassio-ecoflow-cloud).
 

@@ -4,6 +4,7 @@ Flujo: POST /auth/login -> GET /iot-auth/app/certification -> MQTT TLS.
 Los mensajes llegan en protobuf; se decodifican aquí sin depender de `protobuf`.
 """
 import base64
+import copy
 import json
 import logging
 import os
@@ -188,10 +189,32 @@ def _w(v):
     return round(abs(v)) if v is not None else 0
 
 
+def _pack(nombre, p):
+    cap = CAPACIDAD_WH
+    if p.get("design_cap") and p.get("cell_series_num"):
+        cap = round(p["design_cap"] * p["cell_series_num"] * 3.2 / 1000)
+    soc = _primero(p.get("f32_show_soc"), p.get("soc"))
+    return {"nombre": nombre, "soc": round(soc, 1) if soc is not None else None, "salud": p.get("soh"),
+            "ciclos": p.get("cycles"), "temp": p.get("max_cell_temp"), "capacidad_wh": cap,
+            "_restante": p.get("remain_cap"), "_total": p.get("full_cap")}
+
+
 def resumir(campos):
     d = campos.get("display", {})
     c, b = campos.get("cms", {}), campos.get("bms", {})
+    extras = campos.get("bms_extra", {})
+    packs = [_pack("Principal", b)] if b else []
+    packs += [_pack("Extra" if len(extras) == 1 else f"Extra {n}", extras[n]) for n in sorted(extras)]
     soc = _primero(d.get("bms_batt_soc"), d.get("cms_batt_soc"), c.get("cms_batt_soc"), b.get("f32_show_soc"))
+    capacidad = CAPACIDAD_WH
+    if len(packs) > 1:
+        capacidad = sum(p["capacidad_wh"] for p in packs)
+        if all(p["_restante"] and p["_total"] for p in packs):
+            soc = 100 * sum(p["_restante"] for p in packs) / sum(p["_total"] for p in packs)
+    elif packs:
+        capacidad = packs[0]["capacidad_wh"]
+    for p in packs:
+        del p["_restante"], p["_total"]
     edo = _primero(d.get("bms_chg_dsg_state"), d.get("cms_chg_dsg_state"), c.get("cms_chg_dsg_state"))
     estado = {0: "reposo", 1: "descargando", 2: "cargando"}.get(edo)
     if estado == "cargando":
@@ -204,8 +227,9 @@ def resumir(campos):
         "soc": round(soc, 1) if soc is not None else None,
         "estado": estado,
         "restante_min": mins,
-        "wh": round(CAPACIDAD_WH * soc / 100) if soc is not None else None,
-        "capacidad_wh": CAPACIDAD_WH,
+        "wh": round(capacidad * soc / 100) if soc is not None else None,
+        "capacidad_wh": capacidad,
+        "baterias": packs,
         "min_descarga": _primero(d.get("cms_min_dsg_soc"), c.get("cms_min_dsg_soc")),
         "max_carga": _primero(d.get("cms_max_chg_soc"), c.get("cms_max_chg_soc")),
         "entrada_w": _w(d.get("pow_in_sum_w")),
@@ -233,7 +257,7 @@ def resumir(campos):
 class EcoFlow:
     def __init__(self):
         self.lock = threading.Lock()
-        self.campos = {"display": {}, "runtime": {}, "cms": {}, "bms": {}}
+        self.campos = {"display": {}, "runtime": {}, "cms": {}, "bms": {}, "bms_extra": {}}
         self.estado = "sin_configurar"
         self.error = None
         self.ultimo = 0.0
@@ -309,7 +333,10 @@ class EcoFlow:
             return
         with self.lock:
             for grupo, datos in partes:
-                self.campos[grupo].update(datos)
+                if grupo == "bms" and datos.get("num"):
+                    self.campos["bms_extra"].setdefault(str(datos["num"]), {}).update(datos)
+                else:
+                    self.campos[grupo].update(datos)
             self.ultimo = time.time()
             self.estado, self.error = "en_linea", None
 
@@ -364,7 +391,12 @@ class EcoFlow:
                     "pow_get_qcusb1": -a1, "pow_get_qcusb2": 0, "pow_get_12v": 0,
                     "bms_batt_soh": 99.0, "bms_max_cell_temp": 29, "cms_min_dsg_soc": 10, "cms_max_chg_soc": 100,
                 })
-                self.campos["bms"].update({"cycles": 37, "soh": 99})
+                self.campos["bms"].update({"num": 0, "f32_show_soc": round(soc, 1), "cycles": 37, "soh": 99,
+                                           "max_cell_temp": 29, "design_cap": 20000, "cell_series_num": 16,
+                                           "full_cap": 19963, "remain_cap": round(19963 * soc / 100)})
+                self.campos["bms_extra"]["1"] = {"num": 1, "f32_show_soc": 72.0, "cycles": 12, "soh": 100,
+                                                 "max_cell_temp": 26, "design_cap": 20000, "cell_series_num": 16,
+                                                 "full_cap": 19980, "remain_cap": 14386}
                 self.ultimo = time.time()
                 self.estado = "en_linea"
             time.sleep(5)
@@ -378,7 +410,7 @@ class EcoFlow:
 
     def datos(self):
         with self.lock:
-            campos = {k: dict(v) for k, v in self.campos.items()}
+            campos = copy.deepcopy(self.campos)
             ultimo, estado, error = self.ultimo, self.estado, self.error
         return {
             "estado": estado,

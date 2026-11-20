@@ -30,6 +30,23 @@
     Object.entries({ x1, y1, x2, y2 }).forEach(([k, v]) => $("bat-lim").setAttribute(k, v.toFixed(1)));
   }
 
+  const num = (v, u = "") => (v != null ? `${Math.round(v)}${u}` : "--");
+
+  function saludSimple(r) {
+    return `<div class="valor">${r.salud != null ? `${Math.round(r.salud)}<small>%</small>` : "--"}</div>
+      <div class="par"><span>Ciclos</span><b>${num(r.ciclos)}</b></div>
+      <div class="par"><span>Temp.</span><b>${num(r.temp, "°")}</b></div>`;
+  }
+
+  function tablaSalud(packs) {
+    const fila = (n, f) => `<span>${n}</span>${packs.map((p) => `<b>${f(p)}</b>`).join("")}`;
+    return `<div class="tabla" style="grid-template-columns: auto repeat(${packs.length}, auto)">
+      <span></span>${packs.map((p) => `<i>${p.nombre}</i>`).join("")}
+      ${fila("Salud", (p) => num(p.salud, "%"))}
+      ${fila("Ciclos", (p) => num(p.ciclos))}
+      ${fila("Temp.", (p) => num(p.temp, "°"))}</div>`;
+  }
+
   function pintar(r, viejo) {
     const t = $("bat");
     t.className = `tarjeta bat ${r.estado || ""}${r.soc != null && r.soc <= 15 ? " bajo" : ""}${viejo ? " viejo" : ""}`;
@@ -49,9 +66,10 @@
     $("bat-salida").innerHTML = w(r.salida_w);
     $("bat-salidas").innerHTML = lista(SALIDAS, r.salidas);
 
-    $("bat-salud").innerHTML = r.salud != null ? `${Math.round(r.salud)}<small>%</small>` : "--";
-    $("bat-ciclos").textContent = r.ciclos ?? "--";
-    $("bat-temp").textContent = r.temp != null ? `${Math.round(r.temp)}°` : "--";
+    const packs = r.baterias || [];
+    $("bat-packs").textContent = packs.length > 1
+      ? packs.map((p) => `${p.nombre} ${p.soc != null ? Math.round(p.soc) : "--"}%`).join(" · ") : "";
+    $("bat-salud").innerHTML = packs.length > 1 ? tablaSalud(packs) : saludSimple(r);
   }
 
   async function bateria() {

@@ -52,6 +52,20 @@ class Decodificador(unittest.TestCase):
         self.assertEqual(r["ciclos"], 37)
         self.assertEqual(r["salud"], 100)
 
+    def test_bateria_extra(self):
+        e = ecoflow.EcoFlow()
+        for num, sn, ciclos in ((0, "P351", 23), (1, "P361", 12)):
+            pdata = _enc(1, num) + _enc(14, ciclos) + _enc(81, sn)
+            e.recibir(paquete(32, 50, pdata))
+        self.assertEqual(e.campos["bms"]["cycles"], 23)
+        self.assertEqual(e.campos["bms_extra"]["1"]["pack_sn"], "P361")
+        r = resumir({"display": {"bms_batt_soc": 90},
+                     "bms": {"full_cap": 20000, "remain_cap": 18000, "design_cap": 20000, "cell_series_num": 16, "soh": 100},
+                     "bms_extra": {"1": {"full_cap": 20000, "remain_cap": 14000, "design_cap": 20000, "cell_series_num": 16}}})
+        self.assertEqual(r["soc"], 80.0)
+        self.assertEqual(r["capacidad_wh"], 2048)
+        self.assertEqual([p["nombre"] for p in r["baterias"]], ["Principal", "Extra"])
+
     def test_peticion(self):
         h = dict((n, v) for n, _, v in ecoflow._campos_crudos(next(ecoflow._campos_crudos(peticion_estado_completo()))[2]))
         self.assertEqual((h[2], h[3], bytes(h[23])), (32, 32, b"pi-dashboard"))

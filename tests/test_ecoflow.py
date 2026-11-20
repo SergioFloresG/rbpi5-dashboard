@@ -65,6 +65,10 @@ class Decodificador(unittest.TestCase):
         self.assertEqual(r["soc"], 80.0)
         self.assertEqual(r["capacidad_wh"], 2048)
         self.assertEqual([p["nombre"] for p in r["baterias"]], ["Principal", "Extra"])
+        r = resumir({"display": {"bms_batt_soc": 90},
+                     "bms": {"full_cap": 20000, "remain_cap": 18000},
+                     "bms_extra": {"1": {"full_cap": 20000, "remain_cap": 0}}})
+        self.assertEqual(r["soc"], 45.0)
 
     def test_peticion(self):
         h = dict((n, v) for n, _, v in ecoflow._campos_crudos(next(ecoflow._campos_crudos(peticion_estado_completo()))[2]))

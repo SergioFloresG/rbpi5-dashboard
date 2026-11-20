@@ -209,7 +209,7 @@ def resumir(campos):
     capacidad = CAPACIDAD_WH
     if len(packs) > 1:
         capacidad = sum(p["capacidad_wh"] for p in packs)
-        if all(p["_restante"] and p["_total"] for p in packs):
+        if all(p["_restante"] is not None and p["_total"] for p in packs):
             soc = 100 * sum(p["_restante"] for p in packs) / sum(p["_total"] for p in packs)
     elif packs:
         capacidad = packs[0]["capacidad_wh"]

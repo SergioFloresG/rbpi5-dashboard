@@ -30,6 +30,7 @@ CAPACIDAD_WH = float(os.environ.get("ECOFLOW_CAPACIDAD_WH", "1024"))
 DEMO = os.environ.get("ECOFLOW_DEMO", "0").strip() in ("1", "true", "si", "sí")
 
 SIN_DATOS_SEG = 300
+EXTRA_VIGENCIA_SEG = 120
 REINTENTO_SEG = 60
 REINTENTO_LOGIN_SEG = 1800
 
@@ -261,6 +262,7 @@ class EcoFlow:
         self.estado = "sin_configurar"
         self.error = None
         self.ultimo = 0.0
+        self.visto_extra = {}
         self.mqtt = None
 
     # HTTP
@@ -335,6 +337,7 @@ class EcoFlow:
             for grupo, datos in partes:
                 if grupo == "bms" and datos.get("num"):
                     self.campos["bms_extra"].setdefault(str(datos["num"]), {}).update(datos)
+                    self.visto_extra[str(datos["num"])] = time.time()
                 else:
                     self.campos[grupo].update(datos)
             self.ultimo = time.time()
@@ -394,6 +397,7 @@ class EcoFlow:
                 self.campos["bms"].update({"num": 0, "f32_show_soc": round(soc, 1), "cycles": 37, "soh": 99,
                                            "max_cell_temp": 29, "design_cap": 20000, "cell_series_num": 16,
                                            "full_cap": 19963, "remain_cap": round(19963 * soc / 100)})
+                self.visto_extra["1"] = time.time()
                 self.campos["bms_extra"]["1"] = {"num": 1, "f32_show_soc": 72.0, "cycles": 12, "soh": 100,
                                                  "max_cell_temp": 26, "design_cap": 20000, "cell_series_num": 16,
                                                  "full_cap": 19980, "remain_cap": 14386}
@@ -410,6 +414,9 @@ class EcoFlow:
 
     def datos(self):
         with self.lock:
+            for num, t in list(self.visto_extra.items()):
+                if time.time() - t > EXTRA_VIGENCIA_SEG:
+                    del self.visto_extra[num], self.campos["bms_extra"][num]
             campos = copy.deepcopy(self.campos)
             ultimo, estado, error = self.ultimo, self.estado, self.error
         return {

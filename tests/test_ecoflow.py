@@ -59,6 +59,9 @@ class Decodificador(unittest.TestCase):
             e.recibir(paquete(32, 50, pdata))
         self.assertEqual(e.campos["bms"]["cycles"], 23)
         self.assertEqual(e.campos["bms_extra"]["1"]["pack_sn"], "P361")
+        self.assertIn("1", e.datos()["campos"]["bms_extra"])
+        e.visto_extra["1"] -= ecoflow.EXTRA_VIGENCIA_SEG + 1
+        self.assertEqual(e.datos()["campos"]["bms_extra"], {})
         r = resumir({"display": {"bms_batt_soc": 90},
                      "bms": {"full_cap": 20000, "remain_cap": 18000, "design_cap": 20000, "cell_series_num": 16, "soh": 100},
                      "bms_extra": {"1": {"full_cap": 20000, "remain_cap": 14000, "design_cap": 20000, "cell_series_num": 16}}})

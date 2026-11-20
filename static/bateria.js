@@ -18,7 +18,8 @@
 
   function duracion(min) {
     if (min == null) return "--";
-    const h = Math.floor(min / 60), m = min % 60;
+    const d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+    if (d) return `${d} d ${h} h`;
     return h ? `${h} h ${m} min` : `${m} min`;
   }
 

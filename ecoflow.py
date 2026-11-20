@@ -222,7 +222,7 @@ def resumir(campos):
             "usb_a": _w(d.get("pow_get_qcusb1")) + _w(d.get("pow_get_qcusb2")),
             "dc12v": _w(d.get("pow_get_12v")),
         },
-        "salud": _primero(d.get("bms_batt_soh"), b.get("soh"), d.get("cms_batt_soh")),
+        "salud": _primero(*(v or None for v in (d.get("bms_batt_soh"), b.get("soh"), d.get("cms_batt_soh")))),
         "ciclos": b.get("cycles"),
         "temp": _primero(d.get("bms_max_cell_temp"), b.get("max_cell_temp"), b.get("temp")),
     }

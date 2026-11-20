@@ -44,12 +44,13 @@ class Decodificador(unittest.TestCase):
     def test_resumen(self):
         r = resumir({"display": {"bms_batt_soc": 50, "bms_chg_dsg_state": 1, "bms_dsg_rem_time": 5999,
                                  "pow_get_ac_out": -160.0, "pow_get_typec1": -18, "pow_get_typec2": -2},
-                     "bms": {"cycles": 37}})
+                     "bms": {"cycles": 37, "soh": 100}})
         self.assertEqual(r["estado"], "descargando")
         self.assertIsNone(r["restante_min"])
         self.assertEqual(r["salidas"]["ac"], 160)
         self.assertEqual(r["salidas"]["usb_c"], 20)
         self.assertEqual(r["ciclos"], 37)
+        self.assertEqual(r["salud"], 100)
 
     def test_peticion(self):
         h = dict((n, v) for n, _, v in ecoflow._campos_crudos(next(ecoflow._campos_crudos(peticion_estado_completo()))[2]))

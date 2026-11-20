@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Dashboard</title>
+<link rel="stylesheet" href="/static/vendor/leaflet.css">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<main class="pantalla">
+  <section class="panel izq">
+    <div id="mapa" class="mapa"></div>
+
+    <header class="cabecera">
+      <div class="reloj">
+        <div id="hora" class="hora">--:--</div>
+        <div id="fecha" class="fecha"></div>
+      </div>
+      <div class="clima">
+        <div id="icono" class="icono"></div>
+        <div>
+          <div id="temp" class="temp">--°</div>
+          <div id="desc" class="desc"></div>
+          <div id="maxmin" class="maxmin"></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="tarjetas">
+      <article class="tarjeta">
+        <h3>Sensación</h3>
+        <div class="valor" id="sensacion">--</div>
+      </article>
+      <article class="tarjeta">
+        <h3>Humedad</h3>
+        <div class="valor" id="humedad">--</div>
+        <div class="barra"><span id="humedad-barra"></span></div>
+      </article>
+      <article class="tarjeta">
+        <h3>Viento</h3>
+        <div class="fila">
+          <svg id="brujula" class="brujula" viewBox="-50 -50 100 100">
+            <circle r="46" class="aro"/>
+            <text y="-30" class="pc">N</text>
+            <g id="flecha"><path d="M0,-28 L9,10 L0,4 L-9,10 Z" class="flecha"/></g>
+          </svg>
+          <div>
+            <div class="valor" id="viento">--</div>
+            <div class="sub" id="viento-sub"></div>
+          </div>
+        </div>
+      </article>
+      <article class="tarjeta">
+        <h3>Índice UV</h3>
+        <div class="valor" id="uv">--</div>
+        <div class="sub" id="uv-sub"></div>
+      </article>
+      <article class="tarjeta">
+        <h3>Calidad del aire</h3>
+        <div class="valor" id="aqi">--</div>
+        <div class="sub" id="aqi-sub"></div>
+      </article>
+      <article class="tarjeta">
+        <h3>Visibilidad</h3>
+        <div class="valor" id="visibilidad">--</div>
+      </article>
+      <article class="tarjeta">
+        <h3>Presión</h3>
+        <div class="valor" id="presion">--</div>
+      </article>
+      <article class="tarjeta">
+        <h3>Sol</h3>
+        <div class="par"><span>Amanecer</span><b id="amanecer">--</b></div>
+        <div class="par"><span>Anochecer</span><b id="anochecer">--</b></div>
+      </article>
+      <article class="tarjeta">
+        <h3>Luna</h3>
+        <div class="fila">
+          <svg id="luna" class="luna" viewBox="-50 -50 100 100"></svg>
+          <div>
+            <div class="sub fuerte" id="fase">--</div>
+            <div class="par"><span>Sale</span><b id="luna-sale">--</b></div>
+            <div class="par"><span>Pone</span><b id="luna-pone">--</b></div>
+          </div>
+        </div>
+      </article>
+      <article class="tarjeta">
+        <h3>Radar</h3>
+        <div class="valor chico" id="radar-hora">--</div>
+        <div class="leyenda"><span>Ligera</span><i></i><span>Intensa</span></div>
+      </article>
+    </div>
+    <footer class="pie" id="pie"></footer>
+  </section>
+
+  <section class="panel der">
+    <div class="vacio">Panel derecho<br><small>por definir</small></div>
+  </section>
+</main>
+<script src="/static/vendor/leaflet.js"></script>
+<script src="/static/app.js"></script>
+<script src="/static/radar.js"></script>
+</body>
+</html>

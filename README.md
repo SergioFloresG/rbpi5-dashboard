@@ -4,7 +4,7 @@ Dashboard a pantalla completa para Raspberry Pi 5 con Ubuntu en modo terminal y 
 La pantalla se divide en dos paneles: lado a lado en horizontal (1280x1080 c/u) o apilados si el monitor está girado a vertical (1080x1280 c/u).
 
 - **Panel principal:** radar animado de fondo, reloj, clima, sensación térmica, humedad, viento, índice UV, calidad del aire, visibilidad, presión, sol y luna.
-- **Segundo panel:** por definir (siempre en negro).
+- **Segundo panel:** arriba, tarjeta de la batería EcoFlow Delta 3 Plus (si está configurada); el resto, por definir.
 
 Fuentes, sin API key: [Open-Meteo](https://open-meteo.com) (clima y calidad del aire), [RainViewer](https://www.rainviewer.com/api.html) (radar) y Esri Canvas (mapa base). La luna y el sol se calculan localmente con `astral`.
 
@@ -25,6 +25,7 @@ Al encender, la Pi arranca el servidor (`pi-dashboard.service`) y el kiosco (Ubu
 
 ```bash
 cd ~/pi-dashboard && git pull
+.venv/bin/pip install -r requirements.txt
 sudo systemctl restart pi-dashboard
 ```
 
@@ -40,8 +41,23 @@ sudo systemctl restart pi-dashboard
 | `DASH_CACHE_SEG` | Segundos de caché del clima (900) |
 | `DASH_RADAR_ZOOM` | Zoom del radar (máx. 7) |
 | `DASH_TEMA` | `AUTO` (claro de amanecer a anochecer), `BLACK` o `WHITE` |
+| `ECOFLOW_EMAIL`, `ECOFLOW_PASSWORD` | Cuenta de la app EcoFlow para la tarjeta de batería (vacío = tarjeta oculta) |
+| `ECOFLOW_SN` | Número de serie de la batería (app EcoFlow > dispositivo > Ajustes > Información) |
+| `ECOFLOW_API_HOST` | `api.ecoflow.com` (América/global) o `api-e.ecoflow.com` (Europa) |
+| `ECOFLOW_CAPACIDAD_WH` | Capacidad en Wh si la batería no la reporta (1024, Delta 3 Plus) |
+| `ECOFLOW_DEMO` | `1` muestra datos simulados sin conectarse a EcoFlow |
 
 Después de cambiarla: `sudo systemctl restart pi-dashboard`.
+
+## Batería EcoFlow
+
+Tarjeta arriba del panel derecho (abajo en vertical) para la Delta 3 / Delta 3 Plus: % de carga, tiempo para lleno o vacío, entrada (Solar 1, Solar 2, AC, batería extra), salida (AC, USB-C, USB-A, 12V), salud, ciclos y temperatura. Con batería adicional, el % y los Wh son del conjunto y la salud, ciclos y temperatura se muestran por batería (llegan como heartbeats BMS con `num` 1, 2…).
+
+Usa la misma nube que la app de EcoFlow (no la API de desarrolladores ni Home Assistant): login en `/auth/login`, credenciales MQTT en `/iot-auth/app/certification` y datos en tiempo real por MQTT TLS (`/app/device/property/<SN>`). Los mensajes protobuf se decodifican en `ecoflow.py` con los campos de `ecoflow_campos.py`, tomados de [hassio-ecoflow-cloud](https://github.com/tolwi/hassio-ecoflow-cloud).
+
+`GET /api/bateria` devuelve el `estado` de la conexión, un `resumen` para la tarjeta y todos los `campos` recibidos. Para revisar la conexión: `journalctl -u pi-dashboard -f` y `curl -s localhost:3000/api/bateria`.
+
+Es una API no oficial: EcoFlow puede cambiarla.
 
 ## Pantalla
 
@@ -65,6 +81,8 @@ Tras cambiar Ubuntu Frame: `sudo snap restart ubuntu-frame && sudo snap restart 
 
 ## Estructura
 
-- `app.py`: servidor Flask. `GET /api/clima` (caché de 15 min), `GET /api/radar`, `GET /api/config`.
-- `static/`: página (`index.html`, `style.css`, `app.js`, `radar.js`) y Leaflet local en `vendor/`.
+- `app.py`: servidor Flask. `GET /api/clima` (caché de 15 min), `GET /api/radar`, `GET /api/config`, `GET /api/bateria`.
+- `ecoflow.py`, `ecoflow_campos.py`: cliente de la nube EcoFlow y mapa de campos protobuf de la Delta 3.
+- `static/`: página (`index.html`, `style.css`, `app.js`, `radar.js`, `bateria.js`) y Leaflet local en `vendor/`.
+- `tests/`: pruebas del decodificador (`.venv/bin/python -m unittest tests/test_ecoflow.py`).
 - `install.sh`: dependencias, servicio `systemd` y snaps del kiosco.

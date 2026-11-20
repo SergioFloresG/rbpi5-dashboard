@@ -94,11 +94,43 @@
   </section>
 
   <section class="panel der">
+    <article class="tarjeta bat" id="bat" hidden>
+      <div class="bat-carga">
+        <svg class="rueda" viewBox="0 0 120 120">
+          <circle class="fondo" cx="60" cy="60" r="52"/>
+          <circle class="nivel" id="bat-nivel" cx="60" cy="60" r="52"/>
+          <line class="lim" id="bat-lim"/>
+          <text x="60" y="64" class="pct" id="bat-pct">--</text>
+          <text x="60" y="82" class="est" id="bat-est"></text>
+        </svg>
+        <div class="bat-info">
+          <span class="t">Batería</span>
+          <span class="v" id="bat-tiempo">--</span>
+          <span class="s" id="bat-tiempo-sub"></span>
+          <span class="s" id="bat-packs"></span>
+          <span class="s" id="bat-wh"></span>
+        </div>
+      </div>
+      <div class="bat-ent">
+        <div class="cab"><h3>Entrada</h3><div class="valor" id="bat-entrada">--</div></div>
+        <div class="lista" id="bat-entradas"></div>
+      </div>
+      <div class="bat-sal">
+        <div class="cab"><h3>Salida</h3><div class="valor" id="bat-salida">--</div></div>
+        <div class="lista" id="bat-salidas"></div>
+      </div>
+      <div class="bat-salud">
+        <h3>Salud</h3>
+        <div id="bat-salud"></div>
+      </div>
+    </article>
+    <div class="bat-aviso" id="bat-aviso" hidden></div>
     <div class="vacio">Panel derecho<br><small>por definir</small></div>
   </section>
 </main>
 <script src="/static/vendor/leaflet.js"></script>
 <script src="/static/app.js"></script>
 <script src="/static/radar.js"></script>
+<script src="/static/bateria.js"></script>
 </body>
 </html>

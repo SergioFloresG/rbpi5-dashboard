@@ -99,3 +99,44 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 
 .der { background: #0b0f17; }
 .der .vacio { color: #2f3a4d; }
+.der:has(.bat:not([hidden])) { background: var(--fondo); }
+.der:has(.bat:not([hidden])) .vacio { color: var(--vacio); }
+
+.bat { height: 128px; display: grid; grid-template-columns: auto 1fr 1fr auto; flex-direction: unset;
+  align-items: stretch; padding: 10px 16px; gap: 0; flex: none; }
+.bat[hidden] { display: none; }
+.bat > div { padding: 0 14px; border-left: 1px solid var(--borde); display: flex; flex-direction: column;
+  justify-content: center; gap: 3px; min-width: 0; }
+.bat > .bat-carga { border-left: 0; padding-left: 0; flex-direction: row; align-items: center; gap: 12px; }
+.bat h3 { font-size: 14px; }
+.rueda { width: 104px; height: 104px; flex: none; }
+.rueda .fondo { fill: none; stroke: var(--barra); stroke-width: 11; }
+.rueda .nivel { fill: none; stroke: var(--n1); stroke-width: 11; stroke-linecap: round;
+  transform: rotate(-90deg); transform-origin: 60px 60px; transition: stroke-dasharray .6s; }
+.rueda .lim { stroke: var(--tenue); stroke-width: 2; }
+.rueda text { fill: var(--texto); text-anchor: middle; font-family: inherit; }
+.rueda .pct { font-size: 32px; font-weight: 300; }
+.rueda .pct tspan { font-size: 15px; fill: var(--sub); }
+.rueda .est { font-size: 10px; fill: var(--n1); letter-spacing: 1px; text-transform: uppercase; }
+.bat.descargando .rueda .nivel { stroke: var(--n3); }
+.bat.descargando .rueda .est { fill: var(--n3); }
+.bat.bajo .rueda .nivel { stroke: var(--n4); }
+.bat.reposo .rueda .est { fill: var(--sub); }
+.bat-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bat-info .t { font-size: 13px; color: var(--etiqueta); text-transform: uppercase; letter-spacing: 1px; }
+.bat-info .v { font-size: 20px; white-space: nowrap; }
+.bat-info .s { font-size: 13px; color: var(--tenue); white-space: nowrap; }
+.bat .cab { display: flex; justify-content: space-between; align-items: baseline; }
+.bat .cab .valor, .bat-salud .valor { font-size: 28px; }
+.bat-ent .cab .valor { color: var(--n1); }
+.bat-sal .cab .valor { color: var(--n3); }
+.lista { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; margin-top: 2px; }
+.lista span, .bat-salud .par span { white-space: nowrap; }
+.lista .par, .bat-salud .par { font-size: 15px; line-height: 1.35; gap: 6px; }
+.bat-salud .par { gap: 14px; }
+.bat-salud .tabla { display: grid; column-gap: 12px; row-gap: 1px; font-size: 15px; color: var(--sub); align-items: baseline; }
+.bat-salud .tabla i { font-style: normal; font-size: 12px; color: var(--etiqueta); text-transform: uppercase; text-align: right; }
+.bat-salud .tabla b { color: var(--texto); font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.lista .par.cero { opacity: .45; }
+.bat.viejo > div { opacity: .5; }
+.bat-aviso { font-size: 15px; color: var(--tenue); margin-top: 8px; }

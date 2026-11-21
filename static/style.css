@@ -99,15 +99,15 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 
 .der { background: #0b0f17; }
 .der .vacio { color: #2f3a4d; }
-.der:has(.bat:not([hidden])) { background: var(--fondo); }
-.der:has(.bat:not([hidden])) .vacio { color: var(--vacio); }
+.der:has(.bat:not([hidden])), .der:has(.ups) { background: var(--fondo); }
+.der:has(.bat:not([hidden])) .vacio, .der:has(.ups) .vacio { color: var(--vacio); }
 
-.bat { height: 128px; display: grid; grid-template-columns: auto 1fr 1fr auto; flex-direction: unset;
+.bat { height: 128px; display: grid; grid-template-columns: minmax(0, 29fr) minmax(0, 25fr) minmax(0, 26fr) minmax(0, 20fr); flex-direction: unset;
   align-items: stretch; padding: 10px 16px; gap: 0; flex: none; }
 .bat[hidden] { display: none; }
 .bat > div { padding: 0 14px; border-left: 1px solid var(--borde); display: flex; flex-direction: column;
   justify-content: center; gap: 3px; min-width: 0; }
-.bat > .bat-carga { border-left: 0; padding-left: 0; flex-direction: row; align-items: center; gap: 12px; }
+.bat > .bat-carga { border-left: 0; padding-left: 0; flex-direction: row; align-items: center; gap: 12px; justify-content: flex-start; }
 .bat h3 { font-size: 14px; }
 .rueda { width: 104px; height: 104px; flex: none; }
 .rueda .fondo { fill: none; stroke: var(--barra); stroke-width: 11; }
@@ -125,7 +125,7 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 .bat-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .bat-info .t { font-size: 13px; color: var(--etiqueta); text-transform: uppercase; letter-spacing: 1px; }
 .bat-info .v { font-size: 20px; white-space: nowrap; }
-.bat-info .s { font-size: 13px; color: var(--tenue); white-space: nowrap; }
+.bat-info .s { font-size: 13px; color: var(--tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bat .cab { display: flex; justify-content: space-between; align-items: baseline; }
 .bat .cab .valor, .bat-salud .valor { font-size: 28px; }
 .bat-ent .cab .valor { color: var(--n1); }
@@ -140,3 +140,21 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 .lista .par.cero { opacity: .45; }
 .bat.viejo > div { opacity: .5; }
 .bat-aviso { font-size: 15px; color: var(--tenue); margin-top: 8px; }
+.ups-lista { display: flex; flex-direction: column; gap: 12px; }
+.ups-lista:has(.ups) { margin-top: 12px; }
+.ups .lista { grid-template-columns: 1fr; }
+.ups.descargando .bat-ent .cab .valor { color: var(--n4); }
+.ups .par.aviso b { color: var(--n2); }
+.ups .par.malo b { color: var(--n4); }
+.carga { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 15px; line-height: 1.35; color: var(--sub); }
+.carga i { flex: 1; height: 8px; background: var(--barra); border-radius: 4px; overflow: hidden; }
+.carga u { display: block; height: 100%; border-radius: 4px; background: var(--c, var(--tenue)); transition: width .6s, background .6s; }
+.carga b { color: var(--texto); font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.carga b small { font-size: 12px; color: var(--tenue); margin-left: 2px; }
+.carga em { font-style: normal; font-size: 12px; color: var(--tenue); margin-left: 6px; }
+.carga.n1 { --c: var(--n1); } .carga.n2 { --c: var(--n2); } .carga.n3 { --c: var(--n3); } .carga.n4 { --c: var(--n4); }
+@media (orientation: portrait) {
+  .bat .rueda { width: 92px; height: 92px; }
+  .bat > div { padding: 0 12px; }
+  .bat > .bat-carga { gap: 10px; }
+}

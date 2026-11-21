@@ -27,6 +27,7 @@ PASSWORD = os.environ.get("ECOFLOW_PASSWORD", "")
 SN = os.environ.get("ECOFLOW_SN", "").strip()
 API_HOST = os.environ.get("ECOFLOW_API_HOST", "api.ecoflow.com").strip()
 CAPACIDAD_WH = float(os.environ.get("ECOFLOW_CAPACIDAD_WH", "1024"))
+SALIDA_MAX_W = float(os.environ.get("ECOFLOW_SALIDA_MAX_W", "1800"))
 DEMO = os.environ.get("ECOFLOW_DEMO", "0").strip() in ("1", "true", "si", "sí")
 
 SIN_DATOS_SEG = 300
@@ -224,6 +225,7 @@ def resumir(campos):
         mins = _primero(d.get("bms_dsg_rem_time"), d.get("cms_dsg_rem_time"), c.get("cms_dsg_rem_time"))
     if mins is not None and (mins <= 0 or mins >= 5999):
         mins = None
+    salida_max = d.get("plug_in_info_ac_out_dsg_pow_max") or SALIDA_MAX_W
     return {
         "soc": round(soc, 1) if soc is not None else None,
         "estado": estado,
@@ -241,6 +243,8 @@ def resumir(campos):
             "extra": _w(d.get("pow_get_dcp")),
         },
         "salida_w": _w(d.get("pow_out_sum_w")),
+        "salida_max_w": salida_max,
+        "carga_pct": round(100 * _w(d.get("pow_out_sum_w")) / salida_max) if salida_max else None,
         "salidas": {
             "ac": _w(_primero(d.get("pow_get_ac_out"), d.get("pow_get_ac"))),
             "usb_c": _w(d.get("pow_get_typec1")) + _w(d.get("pow_get_typec2")),
@@ -393,6 +397,7 @@ class EcoFlow:
                     "pow_get_ac_out": -ac, "pow_get_typec1": -c1, "pow_get_typec2": 0,
                     "pow_get_qcusb1": -a1, "pow_get_qcusb2": 0, "pow_get_12v": 0,
                     "bms_batt_soh": 99.0, "bms_max_cell_temp": 29, "cms_min_dsg_soc": 10, "cms_max_chg_soc": 100,
+                    "plug_in_info_ac_out_dsg_pow_max": 1800,
                 })
                 self.campos["bms"].update({"num": 0, "f32_show_soc": round(soc, 1), "cycles": 37, "soh": 99,
                                            "max_cell_temp": 29, "design_cap": 20000, "cell_series_num": 16,

@@ -64,7 +64,7 @@
     $("bat-entrada").innerHTML = w(r.entrada_w);
     $("bat-entradas").innerHTML = lista(ENTRADAS, r.entradas);
     $("bat-salida").innerHTML = w(r.salida_w);
-    $("bat-salidas").innerHTML = lista(SALIDAS, r.salidas);
+    $("bat-salidas").innerHTML = lista(SALIDAS, r.salidas) + (r.salida_max_w ? barraCarga(r.carga_pct, r.salida_max_w) : "");
 
     const packs = r.baterias || [];
     $("bat-packs").textContent = packs.length > 1

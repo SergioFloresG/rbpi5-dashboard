@@ -12,6 +12,13 @@ const configuracion = fetch("/api/config").then((r) => r.json()).then((c) => {
   return c;
 });
 
+function barraCarga(pct, maxW) {
+  const n = pct == null ? null : Math.round(pct);
+  const nivel = n == null ? "" : n >= 95 ? "n4" : n >= 80 ? "n3" : n >= 50 ? "n2" : "n1";
+  return `<div class="carga ${nivel}"><span>Carga</span><i><u style="width:${Math.min(n ?? 0, 100)}%"></u></i>
+    <b>${n ?? "--"}<small>%</small>${maxW ? `<em>/ ${Math.round(maxW)} W</em>` : ""}</b></div>`;
+}
+
 function horaLocal() {
   return new Date().toLocaleTimeString("es-MX", { timeZone: zona, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 }

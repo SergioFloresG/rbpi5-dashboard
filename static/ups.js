@@ -54,7 +54,7 @@
       </div>
       <div class="bat-sal">
         <div class="cab"><h3>Salida</h3><div class="valor">${n(r.potencia_w, "W")}</div></div>
-        <div class="lista">${par("Voltaje", n(r.v_salida, "V"))}${par("Carga", n(r.carga_pct, "%"))}${par("Máx.", n(r.nominal_w, "W"))}</div>
+        <div class="lista">${par("Voltaje", n(r.v_salida, "V"))}${barraCarga(r.carga_pct, r.nominal_w)}</div>
       </div>
       <div class="bat-salud">
         <h3>Estado</h3>

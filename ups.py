@@ -59,6 +59,8 @@ def leer_nut(host, puerto, ups):
                 break
             lineas.append(linea)
         s.sendall(b"LOGOUT\n")
+    if not lineas or not (lineas[-1].startswith("ERR ") or lineas[-1] == f"END LIST VAR {ups}"):
+        raise ConnectionError("NUT: respuesta incompleta")
     return parsear_vars(lineas, ups)
 
 

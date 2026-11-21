@@ -62,6 +62,10 @@ class Ups(unittest.TestCase):
         with self.assertRaisesRegex(ConnectionError, "DRIVER-NOT-CONNECTED"):
             leer_nut("127.0.0.1", servidor_falso("ERR DRIVER-NOT-CONNECTED\n"), "cp1500")
 
+    def test_respuesta_incompleta(self):
+        with self.assertRaisesRegex(ConnectionError, "incompleta"):
+            leer_nut("127.0.0.1", servidor_falso(RESPUESTA.split("VAR cp1500 ups.load")[0]), "cp1500")
+
     def test_en_bateria(self):
         r = resumir(parsear_vars(['VAR u ups.status "OB DISCHRG LB"', 'VAR u ups.load "50"',
                                   'VAR u ups.power.nominal "1500"'], "u"))

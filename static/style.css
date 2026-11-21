@@ -143,8 +143,6 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 .ups-lista { display: flex; flex-direction: column; gap: 12px; }
 .ups-lista:has(.ups) { margin-top: 12px; }
 .ups .lista { grid-template-columns: 1fr; }
-.ups-volt .lista { grid-template-columns: 1fr 1fr; }
+.ups.descargando .bat-ent .cab .valor { color: var(--n4); }
 .ups .par.aviso b { color: var(--n2); }
 .ups .par.malo b { color: var(--n4); }
-.ups.descargando .bat-sal .cab .valor { color: var(--n3); }
-.ups .bat-sal .cab .valor { color: var(--texto); }

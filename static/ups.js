@@ -47,18 +47,18 @@
           <span class="s">${r.modelo || ""}</span>
         </div>
       </div>
-      <div class="bat-sal">
-        <div class="cab"><h3>Consumo</h3><div class="valor">${n(r.potencia_w, "W")}</div></div>
-        <div class="lista">${par("Carga", n(r.carga_pct, "%"))}${par("Máx.", n(r.nominal_w, "W"))}</div>
+      <div class="bat-ent">
+        <div class="cab"><h3>Entrada</h3><div class="valor">${n(r.v_entrada, "V")}</div></div>
+        <div class="lista">${par("Red", txtRed, clsRed)}${par("Nominal", n(r.v_nominal, "V"))}</div>
       </div>
-      <div class="ups-volt">
-        <h3>Voltaje</h3>
-        <div class="lista">${par("Entrada", n(r.v_entrada, "V"), r.estado === "bateria" ? "malo" : "")}${par("Salida", n(r.v_salida, "V"))}${par("Batería", n(r.v_bateria, "V", 1))}</div>
+      <div class="bat-sal">
+        <div class="cab"><h3>Salida</h3><div class="valor">${n(r.potencia_w, "W")}</div></div>
+        <div class="lista">${par("Voltaje", n(r.v_salida, "V"))}${par("Carga", n(r.carga_pct, "%"))}${par("Máx.", n(r.nominal_w, "W"))}</div>
       </div>
       <div class="bat-salud">
         <h3>Estado</h3>
-        ${par("Red", txtRed, clsRed)}
-        ${extra.length ? par("Aviso", extra.join(", "), "malo") : par("Prueba", prueba)}
+        ${extra.length ? par("Aviso", extra.join(", "), "malo") : par("Batería", n(r.v_bateria, "V", 1))}
+        ${par("Prueba", prueba)}
         ${par("Alarma", ALARMA[r.alarma] || r.alarma || "--")}
       </div>
     </article>`;

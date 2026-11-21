@@ -31,6 +31,7 @@ def servidor_falso(respuesta):
         with c:
             c.recv(1024)
             c.sendall(respuesta.encode())
+            c.shutdown(socket.SHUT_WR)
             c.recv(1024)
         srv.close()
 

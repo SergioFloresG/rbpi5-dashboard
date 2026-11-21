@@ -10,12 +10,14 @@ echo "==> Paquetes de NUT"
 sudo apt-get update
 sudo apt-get install -y nut-server nut-client
 
-echo "==> UPS detectados por USB"
-sudo nut-scanner -U -q || true
+echo "==> Permisos USB (reglas udev de NUT para el UPS ya conectado)"
+sudo udevadm control --reload-rules
+sudo udevadm trigger --subsystem-match=usb --action=add
+sudo udevadm settle
 
 echo "==> Configuración en /etc/nut (respaldo en *.bak)"
 for f in nut.conf ups.conf upsd.conf; do
-  [ -f "/etc/nut/$f" ] && sudo cp -n "/etc/nut/$f" "/etc/nut/$f.bak"
+  if [ -f "/etc/nut/$f" ] && [ ! -f "/etc/nut/$f.bak" ]; then sudo cp "/etc/nut/$f" "/etc/nut/$f.bak"; fi
 done
 echo "MODE=standalone" | sudo tee /etc/nut/nut.conf > /dev/null
 sudo tee /etc/nut/ups.conf > /dev/null <<CONF

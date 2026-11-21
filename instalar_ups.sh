@@ -27,6 +27,7 @@ maxretry = 3
   driver = usbhid-ups
   port = auto
   pollinterval = 5
+  pollfreq = 10
   desc = "UPS del dashboard"
 CONF
 sudo tee /etc/nut/upsd.conf > /dev/null <<CONF

@@ -5,6 +5,7 @@
   const PRUEBAS = { "no test initiated": "--", "done and passed": "OK", "in progress": "En curso" };
   const ALARMA = { enabled: "Activa", disabled: "Apagada", muted: "Silenciada" };
 
+  const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
   const n = (v, u = "", d = 0) => (v != null ? `${v.toFixed(d)}<small>${u}</small>` : "--");
   const par = (k, v, cls = "") => `<div class="par ${cls}"><span>${k}</span><b>${v}</b></div>`;
 
@@ -30,7 +31,7 @@
     const soc = r.soc ?? 0;
     const est = r.estado === "bateria" ? "En batería" : r.estado === "red" ? (b.includes("cargando") ? "Cargando" : "En red") : "";
     const [txtRed, clsRed] = red(r);
-    const prueba = r.prueba ? PRUEBAS[r.prueba.toLowerCase()] || r.prueba : "--";
+    const prueba = r.prueba ? PRUEBAS[r.prueba.toLowerCase()] || esc(r.prueba) : "--";
     const extra = [b.includes("reemplazar") && "Cambiar batería", b.includes("sobrecarga") && "Sobrecarga"].filter(Boolean);
     return `<article class="tarjeta bat ups ${clase}">
       <div class="bat-carga">
@@ -41,10 +42,10 @@
           <text x="60" y="82" class="est">${est}</text>
         </svg>
         <div class="bat-info">
-          <span class="t">${u.etiqueta || "UPS"}</span>
+          <span class="t">${esc(u.etiqueta || "UPS")}</span>
           <span class="v">${duracion(r.restante_min)}</span>
           <span class="s">${r.restante_min != null ? "autonomía" : ""}</span>
-          <span class="s">${r.modelo || ""}</span>
+          <span class="s">${esc(r.modelo)}</span>
         </div>
       </div>
       <div class="bat-ent">
@@ -59,15 +60,15 @@
         <h3>Estado</h3>
         ${extra.length ? par("Aviso", extra.join(", "), "malo") : par("Batería", n(r.v_bateria, "V", 1))}
         ${par("Prueba", prueba)}
-        ${par("Alarma", ALARMA[r.alarma] || r.alarma || "--")}
+        ${par("Alarma", ALARMA[r.alarma] || esc(r.alarma) || "--")}
       </div>
     </article>`;
   }
 
   function aviso(u) {
-    const nombre = u.etiqueta || u.id;
-    if (!u.resumen) return u.estado === "desconectado" ? `UPS ${nombre}: sin conexión con NUT (${u.error})` : `UPS ${nombre}: conectando…`;
-    if (u.hace_seg > VIEJO_SEG) return `UPS ${nombre}: último dato hace ${Math.round(u.hace_seg / 60)} min (${u.error || "sin datos"})`;
+    const nombre = esc(u.etiqueta || u.id), error = esc(u.error);
+    if (!u.resumen) return u.estado === "desconectado" ? `UPS ${nombre}: sin conexión con NUT (${error})` : `UPS ${nombre}: conectando…`;
+    if (u.hace_seg > VIEJO_SEG) return `UPS ${nombre}: último dato hace ${Math.round(u.hace_seg / 60)} min (${error || "sin datos"})`;
     return "";
   }
 

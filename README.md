@@ -4,7 +4,7 @@ Dashboard a pantalla completa para Raspberry Pi 5 con Ubuntu en modo terminal y 
 La pantalla se divide en dos paneles: lado a lado en horizontal (1280x1080 c/u) o apilados si el monitor está girado a vertical (1080x1280 c/u).
 
 - **Panel principal:** radar animado de fondo, reloj, clima, sensación térmica, humedad, viento, índice UV, calidad del aire, visibilidad, presión, sol y luna.
-- **Segundo panel:** arriba, tarjeta de la batería EcoFlow Delta 3 Plus (si está configurada); el resto, por definir.
+- **Segundo panel:** arriba, tarjetas de la batería EcoFlow Delta 3 Plus y del UPS (si están configurados); el resto, por definir.
 
 Fuentes, sin API key: [Open-Meteo](https://open-meteo.com) (clima y calidad del aire), [RainViewer](https://www.rainviewer.com/api.html) (radar) y Esri Canvas (mapa base). La luna y el sol se calculan localmente con `astral`.
 
@@ -46,6 +46,9 @@ sudo systemctl restart pi-dashboard
 | `ECOFLOW_API_HOST` | `api.ecoflow.com` (América/global) o `api-e.ecoflow.com` (Europa) |
 | `ECOFLOW_CAPACIDAD_WH` | Capacidad en Wh si la batería no la reporta (1024, Delta 3 Plus) |
 | `ECOFLOW_DEMO` | `1` muestra datos simulados sin conectarse a EcoFlow |
+| `UPS_NUT` | UPS en NUT: `[Etiqueta=]ups[@host[:puerto]]`, separados por comas (vacío = tarjeta oculta) |
+| `UPS_INTERVALO_SEG` | Segundos entre lecturas del UPS (5) |
+| `UPS_DEMO` | `1` muestra un UPS simulado sin NUT |
 
 Después de cambiarla: `sudo systemctl restart pi-dashboard`.
 
@@ -58,6 +61,18 @@ Usa la misma nube que la app de EcoFlow (no la API de desarrolladores ni Home As
 `GET /api/bateria` devuelve el `estado` de la conexión, un `resumen` para la tarjeta y todos los `campos` recibidos. Para revisar la conexión: `journalctl -u pi-dashboard -f` y `curl -s localhost:3000/api/bateria`.
 
 Es una API no oficial: EcoFlow puede cambiarla.
+
+## UPS (NUT)
+
+Tarjeta debajo de la batería por cada UPS de `UPS_NUT`: % de carga, autonomía, estado (en red, en batería, cargando, batería baja), consumo en W y % de carga, voltaje de entrada, salida y batería, AVR, prueba y alarma. Los datos vienen de [NUT](https://networkupstools.org) por el puerto 3493 (`LIST VAR`), así que también sirve un UPS conectado a otro equipo con NUT (`sala=cp1000@10.0.1.20`).
+
+Para un UPS por USB a la Pi (p. ej. CyberPower CP1500AVR):
+
+```bash
+cd ~/pi-dashboard && ./instalar_ups.sh cp1500
+```
+
+Instala `nut-server`, crea `/etc/nut/ups.conf` con `usbhid-ups` (respalda los originales en `*.bak`), deja `upsd` solo en `127.0.0.1`, agrega `UPS_NUT=CP1500=cp1500@localhost` a `config.env` y reinicia el dashboard. Para revisar: `upsc cp1500@localhost` y `curl -s localhost:3000/api/ups`.
 
 ## Pantalla
 
@@ -81,8 +96,9 @@ Tras cambiar Ubuntu Frame: `sudo snap restart ubuntu-frame && sudo snap restart 
 
 ## Estructura
 
-- `app.py`: servidor Flask. `GET /api/clima` (caché de 15 min), `GET /api/radar`, `GET /api/config`, `GET /api/bateria`.
+- `app.py`: servidor Flask. `GET /api/clima` (caché de 15 min), `GET /api/radar`, `GET /api/config`, `GET /api/bateria`, `GET /api/ups`.
 - `ecoflow.py`, `ecoflow_campos.py`: cliente de la nube EcoFlow y mapa de campos protobuf de la Delta 3.
-- `static/`: página (`index.html`, `style.css`, `app.js`, `radar.js`, `bateria.js`) y Leaflet local en `vendor/`.
-- `tests/`: pruebas del decodificador (`.venv/bin/python -m unittest tests/test_ecoflow.py`).
+- `ups.py`, `instalar_ups.sh`: lector de NUT y configuración de NUT para un UPS por USB.
+- `static/`: página (`index.html`, `style.css`, `app.js`, `radar.js`, `bateria.js`, `ups.js`) y Leaflet local en `vendor/`.
+- `tests/`: pruebas del decodificador (`.venv/bin/python -m unittest discover tests`).
 - `install.sh`: dependencias, servicio `systemd` y snaps del kiosco.

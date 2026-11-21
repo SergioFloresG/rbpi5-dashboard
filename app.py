@@ -9,6 +9,7 @@ from astral import LocationInfo, moon, sun
 from flask import Flask, jsonify, send_from_directory
 
 from ecoflow import EcoFlow
+from ups import Ups
 
 LAT = float(os.environ.get("DASH_LAT", "21.1619"))
 LON = float(os.environ.get("DASH_LON", "-86.8515"))
@@ -36,6 +37,7 @@ AIRE = (
 app = Flask(__name__, static_folder="static")
 _cache = {"t": 0, "data": None}
 bateria = EcoFlow().iniciar()
+ups = Ups().iniciar()
 
 
 def _get(url):
@@ -156,6 +158,11 @@ def radar():
 @app.get("/api/bateria")
 def api_bateria():
     return jsonify(bateria.datos())
+
+
+@app.get("/api/ups")
+def api_ups():
+    return jsonify(ups.datos())
 
 
 @app.get("/")

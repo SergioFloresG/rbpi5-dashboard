@@ -51,6 +51,10 @@ class Decodificador(unittest.TestCase):
         self.assertEqual(r["salidas"]["usb_c"], 20)
         self.assertEqual(r["ciclos"], 37)
         self.assertEqual(r["salud"], 100)
+        r = resumir({"display": {"bms_chg_dsg_state": 0, "bms_dsg_rem_time": 7189, "bms_chg_rem_time": 12927}})
+        self.assertEqual(r["restante_min"], 7189)
+        r = resumir({"display": {"bms_chg_dsg_state": 2, "bms_chg_rem_time": 143999}})
+        self.assertIsNone(r["restante_min"])
 
     def test_bateria_extra(self):
         e = ecoflow.EcoFlow()

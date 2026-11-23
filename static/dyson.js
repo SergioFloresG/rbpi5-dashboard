@@ -1,24 +1,25 @@
 (() => {
   const DYSON_MS = 10 * 1000;
   const VIEJO_SEG = 300;
-  const CALIDAD = ["--", "Buena", "Aceptable", "Mala", "Muy mala"];
+  const CALIDAD = ["--", "Buena", "Aceptable", "Mala", "Muy mala", "Extrem. mala", "Grave"];
 
   const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
   const n = (v, d = 0) => (v != null ? v.toFixed(d) : "--");
 
-  // Cada nivel ocupa un cuarto de la barra; la marca avanza en proporción dentro de su nivel.
-  function posicion(v, lim) {
-    const i = Math.max(0, lim.findIndex((tope) => v <= tope));
-    if (v > lim[3]) return 100;
-    const desde = i ? lim[i - 1] : 0;
-    return 25 * (i + Math.min(1, Math.max(0, (v - desde) / (lim[i] - desde))));
+  // Cada nivel ocupa un tramo igual de la barra; la marca avanza en proporción dentro de su tramo.
+  // El último nivel no tiene tope: se le da el ancho del nivel anterior.
+  function posicion(v, nivel, lim) {
+    const i = nivel - 1, desde = i ? lim[i - 1] : 0;
+    const hasta = i < lim.length ? lim[i] : desde + (desde - (lim[i - 2] ?? 0));
+    return (100 * (i + Math.min(1, Math.max(0, (v - desde) / (hasta - desde))))) / (lim.length + 1);
   }
 
   function barra(k, v, u, d, nivel, lim) {
+    const tramos = [...lim, 0].map((_, i) => `<i${i + 1 === nivel ? ' class="on"' : ""}></i>`).join("");
     return `<div class="med n${nivel || 0}">
       <div class="par"><span>${k}</span><b>${n(v, d)}<small>${u}</small></b></div>
-      <div class="escala"><i></i><i></i><i></i><i></i>${v != null ? `<u style="left:${posicion(v, lim).toFixed(1)}%"></u>` : ""}</div>
-      <div class="topes"><span>0</span>${lim.map((t) => `<span>${t}</span>`).join("")}</div>
+      <div class="escala">${tramos}${nivel ? `<u style="left:${posicion(v, nivel, lim).toFixed(1)}%"></u>` : ""}</div>
+      <div class="topes"><span>0</span>${lim.map((t) => `<span>${t}</span>`).join("")}<span></span></div>
     </div>`;
   }
 

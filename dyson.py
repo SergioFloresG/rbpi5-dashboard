@@ -22,8 +22,9 @@ MDNS = "_dyson_mqtt._tcp.local."
 SIN_CONEXION_MAX = 6
 
 # Límite superior de cada nivel (1 buena, 2 aceptable, 3 mala; arriba de eso, 4 muy mala)
-# Topes de buena, aceptable, mala y muy mala según la app MyDyson (PM en µg/m³, gases en índice 0-10).
-NIVELES = {"pm2_5": (35, 53, 70, 150), "pm10": (50, 75, 100, 350), "cov": (3, 6, 8, 10), "no2": (3, 6, 8, 10)}
+# Tope de cada nivel de la app MyDyson; por encima del último está el nivel más alto.
+# PM (µg/m³): buena, aceptable, mala, muy mala, extremadamente mala, grave. Gases (índice): buena a muy mala.
+NIVELES = {"pm2_5": (35, 53, 70, 150, 250), "pm10": (50, 75, 100, 350, 420), "cov": (3, 6, 8), "no2": (3, 6, 8)}
 
 
 def parsear_equipos(texto):
@@ -54,7 +55,7 @@ def _num(datos, campo, divisor=1):
 def nivel(campo, v):
     if v is None:
         return None
-    return next((i for i, tope in enumerate(NIVELES[campo][:3], 1) if v <= tope), 4)
+    return next((i for i, tope in enumerate(NIVELES[campo], 1) if round(v) <= tope), len(NIVELES[campo]) + 1)
 
 
 def resumir(estado, ambiente):

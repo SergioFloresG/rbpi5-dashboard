@@ -80,7 +80,7 @@ Instala `nut-server`, crea `/etc/nut/ups.conf` con `usbhid-ups` (respalda los or
 
 ## Purificador Dyson
 
-Tarjeta de un tercio del ancho, debajo del UPS, por cada purificador de `DYSON_EQUIPOS`: calidad del aire (el peor nivel entre PM2.5, PM10, COV y NO₂), temperatura, humedad, modo y vida del filtro; abajo, una barra por contaminante con los topes de buena, aceptable, mala y muy mala de la app MyDyson (PM2.5 35/53/70/150 µg/m³, PM10 50/75/100/350 µg/m³, COV y NO₂ 3/6/8/10). Los datos se leen directo del equipo por MQTT en la red local (puerto 1883), sin la nube ni Home Assistant.
+Tarjeta de un tercio del ancho, debajo del UPS, por cada purificador de `DYSON_EQUIPOS`: calidad del aire (el peor nivel entre PM2.5, PM10, COV y NO₂), temperatura, humedad, modo y vida del filtro; abajo, una barra por contaminante con los niveles de la app MyDyson. PM2.5 (µg/m³): buena 0-35, aceptable 36-53, mala 54-70, muy mala 71-150, extremadamente mala 151-250, grave 251+. PM10 (µg/m³): 0-50, 51-75, 76-100, 101-350, 351-420, 421+. COV y NO₂ (índice): buena 0-3, aceptable 4-6, mala 7-8, muy mala 9+. Los datos se leen directo del equipo por MQTT en la red local (puerto 1883), sin la nube ni Home Assistant.
 
 La credencial local de cada equipo sale de la cuenta Dyson una sola vez:
 

@@ -4,8 +4,23 @@
   const CALIDAD = ["--", "Buena", "Aceptable", "Mala", "Muy mala"];
 
   const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-  const n = (v, u = "", d = 0) => (v != null ? `${v.toFixed(d)}<small>${u}</small>` : "--");
-  const par = (k, v, nivel) => `<div class="par${nivel ? ` n${nivel}` : ""}"><span>${k}</span><b>${v}</b></div>`;
+  const n = (v, d = 0) => (v != null ? v.toFixed(d) : "--");
+
+  // Cada nivel ocupa un cuarto de la barra; la marca avanza en proporción dentro de su nivel.
+  function posicion(v, lim) {
+    const i = Math.max(0, lim.findIndex((tope) => v <= tope));
+    if (v > lim[3]) return 100;
+    const desde = i ? lim[i - 1] : 0;
+    return 25 * (i + Math.min(1, Math.max(0, (v - desde) / (lim[i] - desde))));
+  }
+
+  function barra(k, v, u, d, nivel, lim) {
+    return `<div class="med n${nivel || 0}">
+      <div class="par"><span>${k}</span><b>${n(v, d)}<small>${u}</small></b></div>
+      <div class="escala"><i></i><i></i><i></i><i></i>${v != null ? `<u style="left:${posicion(v, lim).toFixed(1)}%"></u>` : ""}</div>
+      <div class="topes"><span>0</span>${lim.map((t) => `<span>${t}</span>`).join("")}</div>
+    </div>`;
+  }
 
   function modo(r) {
     if (!r.encendido) return "Apagado";
@@ -13,27 +28,21 @@
   }
 
   function tarjeta(e) {
-    const r = e.resumen, nv = r.niveles;
-    return `<article class="tarjeta bat aire${e.hace_seg > VIEJO_SEG ? " viejo" : ""}">
-      <div class="bat-carga">
+    const r = e.resumen, nv = r.niveles, lim = r.limites;
+    return `<article class="tarjeta aire${e.hace_seg > VIEJO_SEG ? " viejo" : ""}">
+      <div class="cab">
         <div class="bat-info">
           <span class="t">${esc(e.etiqueta || "Purificador")}</span>
           <span class="calidad n${r.calidad || 0}">${CALIDAD[r.calidad || 0]}</span>
-          <span class="s">calidad del aire</span>
-          <span class="s">${modo(r)}${r.filtro_hepa != null ? ` · filtro ${Math.round(r.filtro_hepa)}%` : ""}</span>
         </div>
+        <div class="amb"><b>${n(r.temp, 1)}<small>°C</small></b><b>${n(r.humedad)}<small>%</small></b></div>
       </div>
-      <div>
-        <h3>Partículas</h3>
-        <div class="lista">${par("PM2.5", n(r.pm2_5, "µg/m³"), nv.pm2_5)}${par("PM10", n(r.pm10, "µg/m³"), nv.pm10)}</div>
-      </div>
-      <div>
-        <h3>Gases</h3>
-        <div class="lista">${par("COV", n(r.cov, "", 1), nv.cov)}${par("NO₂", n(r.no2, "", 1), nv.no2)}</div>
-      </div>
-      <div>
-        <h3>Ambiente</h3>
-        <div class="lista">${par("Temp.", n(r.temp, "°C", 1))}${par("Humedad", n(r.humedad, "%"))}</div>
+      <span class="s">${modo(r)}${r.filtro_hepa != null ? ` · filtro ${Math.round(r.filtro_hepa)}%` : ""}</span>
+      <div class="barras">
+        ${barra("PM2.5", r.pm2_5, "µg/m³", 0, nv.pm2_5, lim.pm2_5)}
+        ${barra("PM10", r.pm10, "µg/m³", 0, nv.pm10, lim.pm10)}
+        ${barra("COV", r.cov, "", 1, nv.cov, lim.cov)}
+        ${barra("NO₂", r.no2, "", 1, nv.no2, lim.no2)}
       </div>
     </article>`;
   }

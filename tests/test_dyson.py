@@ -42,6 +42,8 @@ class Resumen(unittest.TestCase):
 
     def test_niveles(self):
         self.assertEqual([nivel("pm2_5", v) for v in (0, 35, 36, 53, 70, 71, 300)], [1, 1, 2, 2, 3, 4, 4])
+        self.assertEqual([nivel("pm10", v) for v in (50, 51, 75, 100, 101)], [1, 2, 2, 3, 4])
+        self.assertEqual([nivel("no2", v) for v in (3, 3.1, 6, 8, 8.1)], [1, 2, 2, 3, 4])
         self.assertIsNone(nivel("cov", None))
 
     def test_cambio_de_estado(self):

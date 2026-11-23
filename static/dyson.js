@@ -24,21 +24,27 @@
   }
 
   function modo(r) {
-    if (!r.encendido) return "Apagado";
+    if (!r.encendido) return "Ventilador apagado";
     return [r.auto ? "Auto" : "Encendido", r.calor && "Calor", r.noche && "Noche"].filter(Boolean).join(" · ");
   }
 
-  function tarjeta(e) {
-    const r = e.resumen, nv = r.niveles, lim = r.limites;
-    return `<article class="tarjeta aire${e.hace_seg > VIEJO_SEG ? " viejo" : ""}">
+  // Sin sesión MQTT la Pi no distingue un equipo apagado de uno fuera de la red: la tarjeta queda en gris.
+  function tarjeta(e, limites) {
+    const activo = e.estado === "en_linea";
+    const r = e.resumen || { niveles: {}, limites };
+    const nv = activo ? r.niveles : {}, lim = r.limites;
+    const titulo = activo ? CALIDAD[r.calidad || 0] : e.estado === "conectando" ? "Conectando…" : "Apagado";
+    const linea = activo ? `${modo(r)}${r.filtro_hepa != null ? ` · filtro ${Math.round(r.filtro_hepa)}%` : ""}`
+      : e.estado === "rechazado" ? "credencial rechazada" : `sin conexión${e.resumen ? " · último dato" : ""}`;
+    return `<article class="tarjeta aire${activo ? "" : " apagado"}${activo && e.hace_seg > VIEJO_SEG ? " viejo" : ""}">
       <div class="cab">
         <div class="bat-info">
           <span class="t">${esc(e.etiqueta || "Purificador")}</span>
-          <span class="calidad n${r.calidad || 0}">${CALIDAD[r.calidad || 0]}</span>
+          <span class="calidad n${activo ? r.calidad || 0 : 0}">${titulo}</span>
         </div>
         <div class="amb"><b>${n(r.temp, 1)}<small>°C</small></b><b>${n(r.humedad)}<small>%</small></b></div>
       </div>
-      <span class="s">${modo(r)}${r.filtro_hepa != null ? ` · filtro ${Math.round(r.filtro_hepa)}%` : ""}</span>
+      <span class="s">${linea}</span>
       <div class="barras">
         ${barra("PM2.5", r.pm2_5, "µg/m³", 0, nv.pm2_5, lim.pm2_5)}
         ${barra("PM10", r.pm10, "µg/m³", 0, nv.pm10, lim.pm10)}
@@ -51,9 +57,8 @@
   function aviso(e) {
     const nombre = esc(e.etiqueta || e.id), error = esc(e.error);
     if (e.estado === "rechazado") return `Dyson ${nombre}: el equipo rechazó la credencial (repetir dyson_login.py)`;
-    if (!e.resumen) return e.estado === "desconectado" ? `Dyson ${nombre}: sin conexión (${error})`
-      : `Dyson ${nombre}: ${e.estado === "en_linea" ? "conectado, esperando datos" : "conectando…"}`;
-    if (e.estado === "desconectado" && e.hace_seg <= VIEJO_SEG) return `Dyson ${nombre}: sin conexión, se muestra el último dato (${error})`;
+    if (e.estado !== "en_linea") return "";
+    if (!e.resumen) return `Dyson ${nombre}: conectado, esperando datos`;
     if (e.hace_seg > VIEJO_SEG) return `Dyson ${nombre}: último dato hace ${Math.round(e.hace_seg / 60)} min (${error || "sin datos"})`;
     return "";
   }
@@ -62,7 +67,7 @@
     try {
       const d = await (await fetch("/api/dyson")).json();
       if (!d.configurado) return;
-      $("dyson").innerHTML = d.equipos.map((e) => (e.resumen ? tarjeta(e) : "")).join("");
+      $("dyson").innerHTML = d.equipos.map((e) => (e.resumen || e.estado !== "en_linea" ? tarjeta(e, d.limites) : "")).join("");
       const avisos = [d.error && esc(d.error), ...d.equipos.map(aviso)].filter(Boolean);
       $("dyson-aviso").hidden = !avisos.length;
       $("dyson-aviso").innerHTML = avisos.join("<br>");

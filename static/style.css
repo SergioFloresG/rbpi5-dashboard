@@ -167,6 +167,8 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 .aire .topes span:first-child { justify-content: flex-start; } .aire .topes span:last-child { justify-content: flex-end; }
 .aire .n1 { --c: var(--n1); } .aire .n2 { --c: var(--n2); } .aire .n3 { --c: var(--n3); } .aire .n4 { --c: var(--n4); } .aire .n5 { --c: var(--n5); } .aire .n6 { --c: var(--n6); }
 .aire.viejo > * { opacity: .5; }
+.aire.apagado { filter: grayscale(1); }
+.aire.apagado > * { opacity: .45; }
 .ups .lista { grid-template-columns: 1fr; }
 .ups.descargando .bat-ent .cab .valor { color: var(--n4); }
 .ups .par.aviso b { color: var(--n2); }

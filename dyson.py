@@ -277,4 +277,4 @@ class Dyson:
                 "estado_equipo": l["estado_equipo"],
             })
         return {"configurado": bool(self.equipos) or bool(self.error_config), "demo": DEMO,
-                "error": self.error_config, "equipos": lista}
+                "error": self.error_config, "limites": NIVELES, "equipos": lista}

@@ -52,6 +52,7 @@
     if (e.estado === "rechazado") return `Dyson ${nombre}: el equipo rechazó la credencial (repetir dyson_login.py)`;
     if (!e.resumen) return e.estado === "desconectado" ? `Dyson ${nombre}: sin conexión (${error})`
       : `Dyson ${nombre}: ${e.estado === "en_linea" ? "conectado, esperando datos" : "conectando…"}`;
+    if (e.estado === "desconectado" && e.hace_seg <= VIEJO_SEG) return `Dyson ${nombre}: sin conexión, se muestra el último dato (${error})`;
     if (e.hace_seg > VIEJO_SEG) return `Dyson ${nombre}: último dato hace ${Math.round(e.hace_seg / 60)} min (${error || "sin datos"})`;
     return "";
   }

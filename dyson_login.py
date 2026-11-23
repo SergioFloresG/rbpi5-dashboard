@@ -55,7 +55,8 @@ def main():
             print(f"- {d.name} ({d.serial}): tipo {d.product_type} no es purificador, se omite")
             continue
         try:
-            host, tipo = descubrir(d.serial)
+            host, tipo_red = descubrir(d.serial)
+            tipo = tipo if re.fullmatch(r"\d{3}[EKM]", tipo) else tipo_red
         except Exception as e:
             host = ""
             print(f"- {d.name} ({d.serial}): sin IP por ahora ({e}); se buscará al arrancar")

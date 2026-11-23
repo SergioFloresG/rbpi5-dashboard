@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import random
+import re
 import threading
 import time
 from datetime import datetime
@@ -21,10 +22,17 @@ PUERTO = 1883
 MDNS = "_dyson_mqtt._tcp.local."
 SIN_CONEXION_MAX = 6
 
-# Límite superior de cada nivel (1 buena, 2 aceptable, 3 mala; arriba de eso, 4 muy mala)
 # Tope de cada nivel de la app MyDyson; por encima del último está el nivel más alto.
 # PM (µg/m³): buena, aceptable, mala, muy mala, extremadamente mala, grave. Gases (índice): buena a muy mala.
 NIVELES = {"pm2_5": (35, 53, 70, 150, 250), "pm10": (50, 75, 100, 350, 420), "cov": (3, 6, 8), "no2": (3, 6, 8)}
+
+
+def variantes(tipo):
+    """Tipos MQTT a probar: el configurado y, en familias con variante, las demás (527 → 527K, 527E, 527M)."""
+    base = tipo[:3]
+    if base not in ("438", "527", "358") or not re.fullmatch(r"\d{3}[EKM]?", tipo):
+        return [tipo]
+    return [tipo] + [t for t in (base + "K", base + "E", base + "M", base) if t != tipo]
 
 
 def parsear_equipos(texto):
@@ -162,16 +170,20 @@ class Dyson:
         cli = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv31)
         cli.username_pw_set(e["serie"], e["credencial"])
         cli.reconnect_delay_set(5, 60)
-        orden = f"{e['tipo']}/{e['serie']}/command"
+        # El equipo corta la sesión al suscribirse con un tipo que no es el suyo; se prueban las variantes.
+        candidatos = variantes(e["tipo"])
+        sesion = {"inicio": 0.0, "datos": False, "fijo": len(candidatos) == 1}
 
         def pedir():
             for msg in ("REQUEST-CURRENT-STATE", "REQUEST-PRODUCT-ENVIRONMENT-CURRENT-SENSOR-DATA"):
-                cli.publish(orden, json.dumps({"msg": msg, "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}))
+                cli.publish(f"{e['tipo']}/{e['serie']}/command",
+                            json.dumps({"msg": msg, "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}))
 
         def on_connect(c, _u, _f, rc, _p):
             if rc.is_failure:
                 self._set(e, "rechazado" if rc.value in (4, 5, 134, 135) else "desconectado", f"MQTT: {rc}")
                 return
+            sesion["inicio"] = time.time()
             c.subscribe(f"{e['tipo']}/{e['serie']}/status/current")
             self._set(e, "en_linea")
             pedir()
@@ -179,11 +191,23 @@ class Dyson:
         def on_disconnect(_c, _u, _f, rc, _p):
             with self.lock:
                 rechazado = self.lecturas[e["serie"]]["estado"] == "rechazado"
-            if not rechazado:
-                self._set(e, "desconectado", f"MQTT: {rc}")
+            if rechazado:
+                return
+            if not sesion["fijo"] and not sesion["datos"] and sesion["inicio"] and time.time() - sesion["inicio"] < 3:
+                e["tipo"] = candidatos[(candidatos.index(e["tipo"]) + 1) % len(candidatos)]
+                self._set(e, "desconectado", f"MQTT: el equipo cortó la sesión; se prueba el tipo {e['tipo']}")
+                return
+            self._set(e, "desconectado", f"MQTT: {rc}")
 
-        cli.on_connect, cli.on_disconnect = on_connect, on_disconnect
-        cli.on_message = lambda _c, _u, msg: self.recibir(e, msg.payload)
+        def on_message(_c, _u, msg):
+            if not sesion["datos"]:
+                sesion["datos"] = sesion["fijo"] = True
+                if e["tipo"] != candidatos[0]:
+                    log.warning("Dyson %s: el tipo MQTT es %s (en DYSON_EQUIPOS dice %s)", e["serie"], e["tipo"],
+                                candidatos[0])
+            self.recibir(e, msg.payload)
+
+        cli.on_connect, cli.on_disconnect, cli.on_message = on_connect, on_disconnect, on_message
         return cli, pedir
 
     def _bucle(self, e):

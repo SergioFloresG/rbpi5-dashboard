@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from dyson import Dyson, nivel, parsear_equipos, resumir
+from dyson import Dyson, nivel, parsear_equipos, resumir, variantes
 
 AMBIENTE = {"tact": "2981", "hact": "0061", "pm25": "0008", "pm10": "0012", "va10": "0045", "noxl": "0004",
             "p25r": "0009", "p10r": "0060", "sltm": "OFF"}
@@ -69,6 +69,37 @@ class Mensajes(unittest.TestCase):
         self.assertEqual(eq["resumen"]["pm2_5"], 9)
         self.assertFalse(eq["resumen"]["encendido"])
         self.assertTrue(eq["resumen"]["auto"])
+
+    def test_variante_del_tipo(self):
+        from paho.mqtt.packettypes import PacketTypes
+        from paho.mqtt.reasoncodes import ReasonCode
+
+        class Msg:
+            payload = json.dumps({"msg": "ENVIRONMENTAL-CURRENT-SENSOR-DATA", "data": AMBIENTE})
+
+        d = Dyson()
+        d.equipos = parsear_equipos("Sala=S1|527|cred")
+        d.lecturas = {"S1": {"estado_equipo": {}, "ambiente": {}, "ultimo": 0.0, "error": None, "estado": "conectando"}}
+        e = d.equipos[0]
+        cli, _ = d._cliente(e)
+        ok, caida = ReasonCode(PacketTypes.CONNACK, "Success"), ReasonCode(PacketTypes.DISCONNECT, "Unspecified error")
+        for esperado in ("527K", "527E"):
+            cli.on_connect(cli, None, None, ok, None)
+            cli.on_disconnect(cli, None, None, caida, None)
+            self.assertEqual(e["tipo"], esperado)
+        cli.on_connect(cli, None, None, ok, None)
+        cli.on_message(cli, None, Msg)
+        cli.on_disconnect(cli, None, None, caida, None)
+        self.assertEqual(e["tipo"], "527E")
+        self.assertEqual(d.datos()["equipos"][0]["resumen"]["pm2_5"], 9)
+
+
+class Tipos(unittest.TestCase):
+    def test_variantes(self):
+        self.assertEqual(variantes("527"), ["527", "527K", "527E", "527M"])
+        self.assertEqual(variantes("527K"), ["527K", "527E", "527M", "527"])
+        self.assertEqual(variantes("475"), ["475"])
+        self.assertEqual(variantes("438X"), ["438X"])
 
 
 if __name__ == "__main__":

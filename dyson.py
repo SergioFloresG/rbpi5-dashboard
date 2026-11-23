@@ -24,7 +24,10 @@ SIN_CONEXION_MAX = 6
 
 # Tope de cada nivel de la app MyDyson; por encima del último está el nivel más alto.
 # PM (µg/m³): buena, aceptable, mala, muy mala, extremadamente mala, grave. Gases (índice): buena a muy mala.
-NIVELES = {"pm2_5": (35, 53, 70, 150, 250), "pm10": (50, 75, 100, 350, 420), "cov": (3, 6, 8), "no2": (3, 6, 8)}
+# Polvo: índice 0-10 de los Pure Cool Link (475), con la misma escala que los gases.
+NIVELES = {"pm2_5": (35, 53, 70, 150, 250), "pm10": (50, 75, 100, 350, 420), "polvo": (3, 6, 8),
+           "cov": (3, 6, 8), "no2": (3, 6, 8)}
+FILTRO_LINK_H = 4300
 
 
 def variantes(tipo):
@@ -74,7 +77,8 @@ def resumir(estado, ambiente):
     r = {
         "pm2_5": primero("p25r", "pm25"),
         "pm10": primero("p10r", "pm10"),
-        "cov": _num(ambiente, "va10", 10),
+        "polvo": _num(ambiente, "pact"),
+        "cov": _num(ambiente, "va10", 10) if "va10" in ambiente else _num(ambiente, "vact"),
         "no2": _num(ambiente, "noxl", 10),
         "temp": round(kelvin - 273.15, 1) if kelvin is not None else None,
         "humedad": _num(ambiente, "hact"),
@@ -83,13 +87,15 @@ def resumir(estado, ambiente):
     r["niveles"] = {c: nivel(c, r[c]) for c in NIVELES}
     r["limites"] = NIVELES
     r["calidad"] = max(filter(None, r["niveles"].values()), default=None)
+    horas = _num(estado, "filf")
     r.update({
-        "encendido": _valor(estado, "fpwr") == "ON",
-        "auto": _valor(estado, "auto") == "ON",
+        "encendido": _valor(estado, "fpwr") == "ON" or _valor(estado, "fmod") in ("FAN", "AUTO"),
+        "auto": _valor(estado, "auto") == "ON" or _valor(estado, "fmod") == "AUTO",
         "noche": _valor(estado, "nmod") == "ON",
         "calor": _valor(estado, "hmod") == "HEAT",
         "monitoreo": _valor(estado, "rhtm") == "ON",
-        "filtro_hepa": _num(estado, "hflr"),
+        "filtro_hepa": _num(estado, "hflr") if "hflr" in estado else
+        (round(min(100, 100 * horas / FILTRO_LINK_H)) if horas is not None else None),
         "filtro_carbon": _num(estado, "cflr"),
     })
     return r

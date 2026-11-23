@@ -49,6 +49,7 @@
       <div class="barras">
         ${barra("PM2.5", r.pm2_5, "µg/m³", 0, nv.pm2_5, lim.pm2_5)}
         ${barra("PM10", r.pm10, "µg/m³", 0, nv.pm10, lim.pm10)}
+        ${barra("Polvo", r.polvo, "", 0, nv.polvo, lim.polvo)}
         ${barra("COV", r.cov, "", 1, nv.cov, lim.cov)}
         ${barra("NO₂", r.no2, "", 1, nv.no2, lim.no2)}
       </div>

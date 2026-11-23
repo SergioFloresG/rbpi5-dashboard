@@ -27,7 +27,7 @@ class Resumen(unittest.TestCase):
         r = resumir(ESTADO, AMBIENTE)
         self.assertEqual((r["pm2_5"], r["pm10"], r["cov"], r["no2"]), (9, 60, 4.5, 0.4))
         self.assertEqual((r["temp"], r["humedad"]), (25.0, 61))
-        self.assertEqual(r["niveles"], {"pm2_5": 1, "pm10": 2, "cov": 2, "no2": 1})
+        self.assertEqual(r["niveles"], {"pm2_5": 1, "pm10": 2, "polvo": None, "cov": 2, "no2": 1})
         self.assertEqual(r["calidad"], 2)
         self.assertTrue(r["encendido"] and r["auto"] and r["calor"])
         self.assertFalse(r["noche"])
@@ -52,6 +52,16 @@ class Resumen(unittest.TestCase):
         r = resumir({"fpwr": ["OFF", "ON"], "auto": ["ON", "OFF"]}, AMBIENTE)
         self.assertTrue(r["encendido"])
         self.assertFalse(r["auto"])
+
+
+    def test_pure_cool_link(self):
+        r = resumir({"fmod": "AUTO", "fnst": "FAN", "filf": "2150", "rhtm": "ON"},
+                    {"hact": "0049", "pact": "0003", "tact": "2935", "vact": "0007", "sltm": "OFF"})
+        self.assertEqual((r["polvo"], r["cov"], r["pm2_5"], r["no2"]), (3, 7, None, None))
+        self.assertEqual(r["niveles"], {"pm2_5": None, "pm10": None, "polvo": 1, "cov": 3, "no2": None})
+        self.assertEqual(r["calidad"], 3)
+        self.assertTrue(r["encendido"] and r["auto"])
+        self.assertEqual(r["filtro_hepa"], 50)
 
 
 class Mensajes(unittest.TestCase):

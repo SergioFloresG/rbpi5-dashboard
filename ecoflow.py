@@ -223,7 +223,7 @@ def resumir(campos):
         mins = _primero(d.get("bms_chg_rem_time"), d.get("cms_chg_rem_time"), c.get("cms_chg_rem_time"))
     else:
         mins = _primero(d.get("bms_dsg_rem_time"), d.get("cms_dsg_rem_time"), c.get("cms_dsg_rem_time"))
-    if mins is not None and (mins <= 0 or mins >= 5999):
+    if mins is not None and (mins <= 0 or mins == 5999 or mins >= 143999):
         mins = None
     salida_max = d.get("plug_in_info_ac_out_dsg_pow_max") or SALIDA_MAX_W
     return {

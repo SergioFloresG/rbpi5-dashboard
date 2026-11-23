@@ -99,8 +99,8 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 
 .der { background: #0b0f17; }
 .der .vacio { color: #2f3a4d; }
-.der:has(.bat:not([hidden])), .der:has(.ups) { background: var(--fondo); }
-.der:has(.bat:not([hidden])) .vacio, .der:has(.ups) .vacio { color: var(--vacio); }
+.der:has(.bat:not([hidden])), .der:has(.ups), .der:has(.aire) { background: var(--fondo); }
+.der:has(.bat:not([hidden])) .vacio, .der:has(.ups) .vacio, .der:has(.aire) .vacio { color: var(--vacio); }
 
 .bat { height: 128px; display: grid; grid-template-columns: minmax(0, 29fr) minmax(0, 25fr) minmax(0, 26fr) minmax(0, 20fr); flex-direction: unset;
   align-items: stretch; padding: 10px 16px; gap: 0; flex: none; }
@@ -141,7 +141,12 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 .bat.viejo > div { opacity: .5; }
 .bat-aviso { font-size: 15px; color: var(--tenue); margin-top: 8px; }
 .ups-lista { display: flex; flex-direction: column; gap: 12px; }
-.ups-lista:has(.ups) { margin-top: 12px; }
+.ups-lista:has(.ups), .ups-lista:has(.aire) { margin-top: 12px; }
+.aire .lista { grid-template-columns: 1fr; }
+.aire .calidad { font-size: 28px; font-weight: 300; line-height: 1.1; white-space: nowrap; color: var(--c, var(--texto)); }
+.aire .par b { color: var(--c, var(--texto)); }
+.aire .par b small { color: var(--tenue); }
+.aire .n1 { --c: var(--n1); } .aire .n2 { --c: var(--n2); } .aire .n3 { --c: var(--n3); } .aire .n4 { --c: var(--n4); }
 .ups .lista { grid-template-columns: 1fr; }
 .ups.descargando .bat-ent .cab .valor { color: var(--n4); }
 .ups .par.aviso b { color: var(--n2); }

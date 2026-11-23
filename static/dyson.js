@@ -15,6 +15,7 @@
   }
 
   function barra(k, v, u, d, nivel, lim) {
+    if (v == null) return "";
     const tramos = [...lim, 0].map((_, i) => `<i${i + 1 === nivel ? ' class="on"' : ""}></i>`).join("");
     return `<div class="med n${nivel || 0}">
       <div class="par"><span>${k}</span><b>${n(v, d)}<small>${u}</small></b></div>

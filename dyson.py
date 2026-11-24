@@ -217,10 +217,15 @@ class Dyson:
         return cli, pedir
 
     def _bucle(self, e):
+        # Con host fijo, tras un fallo se busca por mDNS por si el router le dio otra IP.
+        buscar = not e["host"]
         while True:
             cli = None
             try:
-                host = e["host"] or descubrir(e["serie"])[0]
+                host = descubrir(e["serie"])[0] if buscar else e["host"]
+                if e["host"] and host != e["host"]:
+                    log.warning("Dyson %s: ahora está en %s (DYSON_EQUIPOS dice %s)", e["serie"], host, e["host"])
+                    e["host"] = host
                 cli, pedir = self._cliente(e)
                 cli.connect(host, PUERTO, keepalive=30)
                 cli.loop_start()
@@ -238,6 +243,7 @@ class Dyson:
                 if cli:
                     cli.loop_stop()
                     cli.disconnect()
+            buscar = not e["host"] or not buscar
             time.sleep(10)
 
     def _demo(self):

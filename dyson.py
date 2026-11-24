@@ -243,7 +243,9 @@ class Dyson:
                 if cli:
                     cli.loop_stop()
                     cli.disconnect()
-            buscar = not e["host"] or not buscar
+            with self.lock:
+                rechazado = self.lecturas[e["serie"]]["estado"] == "rechazado"
+            buscar = not e["host"] or not (buscar or rechazado)
             time.sleep(10)
 
     def _demo(self):

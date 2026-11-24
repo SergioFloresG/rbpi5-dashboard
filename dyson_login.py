@@ -35,9 +35,11 @@ def guardar(valor):
         with open(CONFIG, encoding="utf-8") as f:
             lineas = [l for l in f.read().splitlines() if not l.startswith("DYSON_EQUIPOS=")]
     lineas.append(f"DYSON_EQUIPOS={valor}")
-    with open(CONFIG, "w", encoding="utf-8") as f:
+    tmp = CONFIG + ".tmp"
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w", encoding="utf-8") as f:
         f.write("\n".join(lineas) + "\n")
-    os.chmod(CONFIG, 0o600)
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, CONFIG)
 
 
 def main():

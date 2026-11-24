@@ -4,7 +4,7 @@ Dashboard a pantalla completa para Raspberry Pi 5 con Ubuntu en modo terminal y 
 La pantalla se divide en dos paneles: lado a lado en horizontal (1280x1080 c/u) o apilados si el monitor está girado a vertical (1080x1280 c/u).
 
 - **Panel principal:** radar animado de fondo, reloj, clima, sensación térmica, humedad, viento, índice UV, calidad del aire, visibilidad, presión, sol y luna.
-- **Segundo panel:** arriba, tarjetas de la batería EcoFlow Delta 3 Plus y del UPS (si están configurados); el resto, por definir.
+- **Segundo panel:** arriba, tarjetas de la batería EcoFlow Delta 3 Plus, del UPS y de los purificadores Dyson (si están configurados); el resto, por definir.
 
 Fuentes, sin API key: [Open-Meteo](https://open-meteo.com) (clima y calidad del aire), [RainViewer](https://www.rainviewer.com/api.html) (radar) y Esri Canvas (mapa base). La luna y el sol se calculan localmente con `astral`.
 
@@ -50,6 +50,9 @@ sudo systemctl restart pi-dashboard
 | `UPS_NUT` | UPS en NUT: `[Etiqueta=]ups[@host[:puerto]]`, separados por comas (vacío = tarjeta oculta) |
 | `UPS_INTERVALO_SEG` | Segundos entre lecturas del UPS (5) |
 | `UPS_DEMO` | `1` muestra un UPS simulado sin NUT |
+| `DYSON_EQUIPOS` | Purificadores Dyson: `[Etiqueta=]serie\|tipo\|credencial[\|host]`, separados por comas (vacío = tarjeta oculta). Lo llena `dyson_login.py` |
+| `DYSON_INTERVALO_SEG` | Segundos entre lecturas del purificador (30) |
+| `DYSON_DEMO` | `1` muestra un purificador simulado |
 
 Después de cambiarla: `sudo systemctl restart pi-dashboard`.
 
@@ -75,6 +78,22 @@ cd ~/pi-dashboard && ./instalar_ups.sh cp1500
 
 Instala `nut-server`, crea `/etc/nut/ups.conf` con `usbhid-ups` (respalda los originales en `*.bak`), deja `upsd` solo en `127.0.0.1`, agrega `UPS_NUT=CP1500=cp1500@localhost` a `config.env` y reinicia el dashboard. Para revisar: `upsc cp1500@localhost` y `curl -s localhost:3000/api/ups`.
 
+## Purificador Dyson
+
+Tarjeta de un tercio del ancho, debajo del UPS, por cada purificador de `DYSON_EQUIPOS`: calidad del aire (el peor nivel entre los contaminantes que mide el equipo), temperatura, humedad, modo y vida del filtro; abajo, una barra por contaminante con los niveles de la app MyDyson. PM2.5 (µg/m³): buena 0-35, aceptable 36-53, mala 54-70, muy mala 71-150, extremadamente mala 151-250, grave 251+. PM10 (µg/m³): 0-50, 51-75, 76-100, 101-350, 351-420, 421+. COV y NO₂ (índice): buena 0-3, aceptable 4-6, mala 7-8, muy mala 9+. Los Pure Cool Link (tipo 475) solo reportan polvo y COV como índice 0-10; se usan con la escala de los gases. Solo se dibujan las barras de los sensores que reporta cada equipo. Los datos se leen directo del equipo por MQTT en la red local (puerto 1883), sin la nube ni Home Assistant.
+
+La credencial local de cada equipo sale de la cuenta Dyson una sola vez:
+
+```bash
+cd ~/pi-dashboard && .venv/bin/pip install -r requirements.txt
+.venv/bin/python dyson_login.py     # correo, código que llega por correo y contraseña
+sudo systemctl restart pi-dashboard
+```
+
+`dyson_login.py` usa [libdyson-neon](https://github.com/libdyson-wg/libdyson-neon), busca cada equipo por mDNS y escribe `DYSON_EQUIPOS` en `config.env`; la contraseña no se guarda. Si la IP no queda en `DYSON_EQUIPOS`, el dashboard busca el equipo por mDNS al conectar; conviene fijarle la IP en el router. Para revisar: `curl -s localhost:3000/api/dyson`.
+
+Con el purificador apagado, los sensores solo reportan si el monitoreo continuo está activo en la app MyDyson.
+
 ## Pantalla
 
 | Acción | Comando |
@@ -97,9 +116,10 @@ Tras cambiar Ubuntu Frame: `sudo snap restart ubuntu-frame && sudo snap restart 
 
 ## Estructura
 
-- `app.py`: servidor Flask. `GET /api/clima` (caché de 15 min), `GET /api/radar`, `GET /api/config`, `GET /api/bateria`, `GET /api/ups`.
+- `app.py`: servidor Flask. `GET /api/clima` (caché de 15 min), `GET /api/radar`, `GET /api/config`, `GET /api/bateria`, `GET /api/ups`, `GET /api/dyson`.
 - `ecoflow.py`, `ecoflow_campos.py`: cliente de la nube EcoFlow y mapa de campos protobuf de la Delta 3.
 - `ups.py`, `instalar_ups.sh`: lector de NUT y configuración de NUT para un UPS por USB.
-- `static/`: página (`index.html`, `style.css`, `app.js`, `radar.js`, `bateria.js`, `ups.js`) y Leaflet local en `vendor/`.
+- `dyson.py`, `dyson_login.py`: lector MQTT local de purificadores Dyson y obtención de la credencial con la cuenta Dyson.
+- `static/`: página (`index.html`, `style.css`, `app.js`, `radar.js`, `bateria.js`, `ups.js`, `dyson.js`) y Leaflet local en `vendor/`.
 - `tests/`: pruebas del decodificador (`.venv/bin/python -m unittest discover tests`).
 - `install.sh`: dependencias, servicio `systemd` y snaps del kiosco.

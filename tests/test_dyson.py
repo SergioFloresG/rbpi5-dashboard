@@ -1,0 +1,116 @@
+import json
+import unittest
+
+from dyson import Dyson, nivel, parsear_equipos, resumir, variantes
+
+AMBIENTE = {"tact": "2981", "hact": "0061", "pm25": "0008", "pm10": "0012", "va10": "0045", "noxl": "0004",
+            "p25r": "0009", "p10r": "0060", "sltm": "OFF"}
+ESTADO = {"fpwr": "ON", "auto": "ON", "nmod": "OFF", "hmod": "HEAT", "rhtm": "ON", "hflr": "0087", "cflr": "INV"}
+
+
+class Equipos(unittest.TestCase):
+    def test_parsear(self):
+        self.assertEqual(parsear_equipos("Sala=X3X-MX-ABC1234A|527K|aB+/cd==|10.0.1.40, NK6-EU-XYZ0000A|438|zz=="), [
+            {"etiqueta": "Sala", "serie": "X3X-MX-ABC1234A", "tipo": "527K", "credencial": "aB+/cd==", "host": "10.0.1.40"},
+            {"etiqueta": None, "serie": "NK6-EU-XYZ0000A", "tipo": "438", "credencial": "zz==", "host": None},
+        ])
+        self.assertEqual(parsear_equipos(""), [])
+
+    def test_incompleto(self):
+        for texto in ("X3X-MX-ABC1234A", "X3X-MX-ABC1234A|527K", "|527K|cred"):
+            with self.assertRaises(ValueError):
+                parsear_equipos(texto)
+
+
+class Resumen(unittest.TestCase):
+    def test_valores(self):
+        r = resumir(ESTADO, AMBIENTE)
+        self.assertEqual((r["pm2_5"], r["pm10"], r["cov"], r["no2"]), (9, 60, 4.5, 0.4))
+        self.assertEqual((r["temp"], r["humedad"]), (25.0, 61))
+        self.assertEqual(r["niveles"], {"pm2_5": 1, "pm10": 2, "polvo": None, "cov": 2, "no2": 1})
+        self.assertEqual(r["calidad"], 2)
+        self.assertTrue(r["encendido"] and r["auto"] and r["calor"])
+        self.assertFalse(r["noche"])
+        self.assertEqual(r["filtro_hepa"], 87)
+        self.assertIsNone(r["filtro_carbon"])
+        self.assertIsNone(r["hcho"])
+
+    def test_sensores_apagados(self):
+        r = resumir({"fpwr": "OFF", "rhtm": "OFF"}, {"tact": "OFF", "hact": "OFF", "pm25": "INIT", "va10": "FAIL"})
+        self.assertEqual([r[c] for c in ("pm2_5", "pm10", "cov", "no2", "temp", "humedad", "calidad")], [None] * 7)
+        self.assertFalse(r["encendido"])
+
+    def test_niveles(self):
+        self.assertEqual([nivel("pm2_5", v) for v in (0, 35, 36, 53, 54, 70, 71, 150, 151, 250, 251)],
+                         [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6])
+        self.assertEqual([nivel("pm10", v) for v in (50, 51, 75, 76, 100, 101, 350, 351, 420, 421)],
+                         [1, 2, 2, 3, 3, 4, 4, 5, 5, 6])
+        self.assertEqual([nivel("no2", v) for v in (0, 3, 3.4, 3.6, 6, 7, 8, 8.4, 9, 10)], [1, 1, 1, 2, 2, 3, 3, 3, 4, 4])
+        self.assertIsNone(nivel("cov", None))
+
+    def test_cambio_de_estado(self):
+        r = resumir({"fpwr": ["OFF", "ON"], "auto": ["ON", "OFF"]}, AMBIENTE)
+        self.assertTrue(r["encendido"])
+        self.assertFalse(r["auto"])
+
+
+    def test_pure_cool_link(self):
+        r = resumir({"fmod": "AUTO", "fnst": "FAN", "filf": "2150", "rhtm": "ON"},
+                    {"hact": "0049", "pact": "0003", "tact": "2935", "vact": "0007", "sltm": "OFF"})
+        self.assertEqual((r["polvo"], r["cov"], r["pm2_5"], r["no2"]), (3, 7, None, None))
+        self.assertEqual(r["niveles"], {"pm2_5": None, "pm10": None, "polvo": 1, "cov": 3, "no2": None})
+        self.assertEqual(r["calidad"], 3)
+        self.assertTrue(r["encendido"] and r["auto"])
+        self.assertEqual(r["filtro_hepa"], 50)
+
+
+class Mensajes(unittest.TestCase):
+    def test_recibir(self):
+        d = Dyson()
+        d.equipos = parsear_equipos("Sala=S1|527K|cred")
+        d.lecturas = {"S1": {"estado_equipo": {}, "ambiente": {}, "ultimo": 0.0, "error": None, "estado": "en_linea"}}
+        e = d.equipos[0]
+        d.recibir(e, b"no es json")
+        d.recibir(e, json.dumps({"msg": "CURRENT-STATE", "product-state": ESTADO}))
+        self.assertIsNone(d.datos()["equipos"][0]["resumen"])
+        d.recibir(e, json.dumps({"msg": "ENVIRONMENTAL-CURRENT-SENSOR-DATA", "data": AMBIENTE}))
+        d.recibir(e, json.dumps({"msg": "STATE-CHANGE", "product-state": {"fpwr": ["ON", "OFF"]}}))
+        eq = d.datos()["equipos"][0]
+        self.assertEqual(eq["resumen"]["pm2_5"], 9)
+        self.assertFalse(eq["resumen"]["encendido"])
+        self.assertTrue(eq["resumen"]["auto"])
+
+    def test_variante_del_tipo(self):
+        from paho.mqtt.packettypes import PacketTypes
+        from paho.mqtt.reasoncodes import ReasonCode
+
+        class Msg:
+            payload = json.dumps({"msg": "ENVIRONMENTAL-CURRENT-SENSOR-DATA", "data": AMBIENTE})
+
+        d = Dyson()
+        d.equipos = parsear_equipos("Sala=S1|527|cred")
+        d.lecturas = {"S1": {"estado_equipo": {}, "ambiente": {}, "ultimo": 0.0, "error": None, "estado": "conectando"}}
+        e = d.equipos[0]
+        cli, _ = d._cliente(e)
+        ok, caida = ReasonCode(PacketTypes.CONNACK, "Success"), ReasonCode(PacketTypes.DISCONNECT, "Unspecified error")
+        for esperado in ("527K", "527E"):
+            cli.on_connect(cli, None, None, ok, None)
+            cli.on_disconnect(cli, None, None, caida, None)
+            self.assertEqual(e["tipo"], esperado)
+        cli.on_connect(cli, None, None, ok, None)
+        cli.on_message(cli, None, Msg)
+        cli.on_disconnect(cli, None, None, caida, None)
+        self.assertEqual(e["tipo"], "527E")
+        self.assertEqual(d.datos()["equipos"][0]["resumen"]["pm2_5"], 9)
+
+
+class Tipos(unittest.TestCase):
+    def test_variantes(self):
+        self.assertEqual(variantes("527"), ["527", "527K", "527E", "527M"])
+        self.assertEqual(variantes("527K"), ["527K", "527E", "527M", "527"])
+        self.assertEqual(variantes("475"), ["475"])
+        self.assertEqual(variantes("438X"), ["438X"])
+
+
+if __name__ == "__main__":
+    unittest.main()

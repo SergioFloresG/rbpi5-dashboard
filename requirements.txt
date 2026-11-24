@@ -1,3 +1,4 @@
 flask
 astral
 paho-mqtt
+libdyson-neon

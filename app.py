@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from astral import LocationInfo, moon, sun
 from flask import Flask, jsonify, send_from_directory
 
+from dyson import Dyson
 from ecoflow import EcoFlow
 from ups import Ups
 
@@ -38,6 +39,7 @@ app = Flask(__name__, static_folder="static")
 _cache = {"t": 0, "data": None}
 bateria = EcoFlow().iniciar()
 ups = Ups().iniciar()
+dyson = Dyson().iniciar()
 
 
 def _get(url):
@@ -163,6 +165,11 @@ def api_bateria():
 @app.get("/api/ups")
 def api_ups():
     return jsonify(ups.datos())
+
+
+@app.get("/api/dyson")
+def api_dyson():
+    return jsonify(dyson.datos())
 
 
 @app.get("/")

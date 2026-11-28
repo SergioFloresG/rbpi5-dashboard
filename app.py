@@ -1,12 +1,13 @@
 import json
 import os
+import shutil
 import time
 import urllib.request
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from astral import LocationInfo, moon, sun
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, abort, jsonify, send_file, send_from_directory
 
 from dyson import Dyson
 from ecoflow import EcoFlow
@@ -21,6 +22,7 @@ RADAR_ZOOM = int(os.environ.get("DASH_RADAR_ZOOM", "7"))
 TEMA = {"BLACK": "BLACK", "DARK": "BLACK", "WHITE": "WHITE", "LIGHT": "WHITE"}.get(
     os.environ.get("DASH_TEMA", "AUTO").strip().upper(), "AUTO")
 RADAR_URL = os.environ.get("DASH_RADAR_URL", "https://api.librewxr.net/public/weather-maps.json")
+RADAR_CACHE = os.environ.get("DASH_RADAR_CACHE") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "radar-cache")
 
 FORECAST = (
     "https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
@@ -164,24 +166,82 @@ def clima():
 _radar = {"t": 0, "data": None}
 
 
-@app.get("/api/radar")
-def radar():
+def _radar_dirs(d):
+    """Carpeta local de cada cuadro vigente. El pronóstico lleva el último cuadro real en el nombre:
+    al publicarse un cuadro nuevo cambia de carpeta y la anterior se borra."""
+    corte = d["frames"][-1]["time"]
+    dirs = {f["time"]: (os.path.join("real", str(f["time"])), f["path"], "") for f in d["frames"]}
+    for f in d["nowcast"]:
+        dirs.setdefault(f["time"], (os.path.join("pron", f"{f['time']}-{corte}"), f["path"], f"?g={corte}"))
+    return dirs
+
+
+def _radar_limpiar(d):
+    vigentes = {v[0] for v in _radar_dirs(d).values()}
+    for tipo in ("real", "pron"):
+        base = os.path.join(RADAR_CACHE, tipo)
+        if not os.path.isdir(base):
+            continue
+        for nombre in os.listdir(base):
+            if os.path.join(tipo, nombre) not in vigentes:
+                shutil.rmtree(os.path.join(base, nombre), ignore_errors=True)
+
+
+def _radar_datos():
     ahora = time.time()
     d = _radar["data"]
     # Solo se consulta cuando ya debería existir un cuadro nuevo (uno cada 10 min), y a lo más una vez por minuto.
     if not d or (ahora - d["frames"][-1]["time"] > 600 and ahora - _radar["t"] > 60):
+        _radar["t"] = ahora
         try:
-            _radar["t"] = ahora
             r = _get(RADAR_URL)
             _radar["data"] = {
                 "host": r["host"],
                 "frames": r["radar"]["past"],
                 "nowcast": r["radar"].get("nowcast") or [],
             }
-        except Exception as e:
+            _radar_limpiar(_radar["data"])
+        except Exception:
             if not _radar["data"]:
-                return jsonify({"error": str(e)}), 502
-    return jsonify(_radar["data"])
+                raise
+    return _radar["data"]
+
+
+@app.get("/api/radar")
+def radar():
+    try:
+        return jsonify(_radar_datos())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+
+@app.get("/api/radar/tile/<int:t>/<int:z>/<int:x>/<int:y>.png")
+def radar_tile(t, z, x, y):
+    """Tile del radar con copia local: se descarga una vez y después se sirve del archivo.
+    Si el archivo se borra, se vuelve a descargar."""
+    try:
+        d = _radar_datos()
+    except Exception:
+        abort(502)
+    cuadro = _radar_dirs(d).get(t)
+    if not cuadro:
+        abort(404)
+    carpeta, ruta, q = cuadro
+    archivo = os.path.join(RADAR_CACHE, carpeta, f"{z}-{x}-{y}.png")
+    if not os.path.isfile(archivo):
+        req = urllib.request.Request(f"{d['host']}{ruta}/256/{z}/{x}/{y}/2/1_1.png{q}",
+                                     headers={"User-Agent": "pi-dashboard"})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                datos = r.read()
+        except Exception:
+            abort(502)
+        os.makedirs(os.path.dirname(archivo), exist_ok=True)
+        tmp = f"{archivo}.{os.getpid()}.{time.time_ns()}.tmp"
+        with open(tmp, "wb") as f:
+            f.write(datos)
+        os.replace(tmp, archivo)
+    return send_file(archivo, mimetype="image/png", max_age=0)
 
 
 @app.get("/api/bateria")

@@ -91,9 +91,10 @@
       : '<a href="https://librewxr.net">LibreWXR</a>';
     const pasados = d.frames.length;
     const corte = d.frames[pasados - 1].time;
-    // El pronóstico se recalcula con cada cuadro nuevo: su clave (y URL) cambia para no reutilizarlo.
-    const lista = d.frames.map((f) => ({ time: f.time, clave: `${d.host}${f.path}`, q: "" }))
-      .concat((d.nowcast || []).map((f) => ({ time: f.time, clave: `${d.host}${f.path}?g=${corte}`, q: `?g=${corte}` })));
+    // Los tiles se piden al servidor local, que guarda copia en disco. El pronóstico se recalcula
+    // con cada cuadro nuevo: su clave (y URL) cambia para no reutilizarlo.
+    const lista = d.frames.map((f) => ({ time: f.time, clave: `real/${f.time}` }))
+      .concat((d.nowcast || []).map((f) => ({ time: f.time, clave: `pron/${f.time}-${corte}` })));
     if (lista.length === capas.length && lista.every((f, i) => f.clave === capas[i].clave)) return;
 
     const turno = ++carga;
@@ -102,7 +103,7 @@
     const nuevas = lista.map((f) => {
       const previa = previas.get(f.clave);
       if (previa) return previa;
-      const c = capa(`${f.clave.split("?")[0]}/256/{z}/{x}/{y}/2/1_1.png${f.q}`, {
+      const c = capa(`/api/radar/tile/${f.time}/{z}/{x}/{y}.png?c=${f.clave}`, {
         opacity: 0, maxNativeZoom: 7, maxZoom: 12, className: "radar-frame", attribution: fuente,
       });
       esperas.push(cargada(c));

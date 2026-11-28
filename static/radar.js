@@ -40,7 +40,7 @@
     const estilo = () => (document.documentElement.dataset.tema === "claro" ? "Light" : "Dark");
     const url = (tipo) => `${ESRI}World_${estilo()}_Gray_${tipo}/MapServer/tile/{z}/{y}/{x}`;
     const base = capa(url("Base"), {
-      maxZoom: 16, attribution: "Esri, HERE, Garmin, © OpenStreetMap · RainViewer",
+      maxZoom: 16, attribution: "Esri, HERE, Garmin, © OpenStreetMap · LibreWXR",
     }).addTo(mapa);
     mapa.createPane("etiquetas").style.zIndex = 450;
     const etiquetas = capa(url("Reference"), {

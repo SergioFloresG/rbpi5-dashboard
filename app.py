@@ -20,7 +20,7 @@ CACHE_SEG = int(os.environ.get("DASH_CACHE_SEG", "900"))
 RADAR_ZOOM = int(os.environ.get("DASH_RADAR_ZOOM", "7"))
 TEMA = {"BLACK": "BLACK", "DARK": "BLACK", "WHITE": "WHITE", "LIGHT": "WHITE"}.get(
     os.environ.get("DASH_TEMA", "AUTO").strip().upper(), "AUTO")
-RADAR_URL = "https://api.rainviewer.com/public/weather-maps.json"
+RADAR_URL = os.environ.get("DASH_RADAR_URL", "https://api.librewxr.net/public/weather-maps.json")
 
 FORECAST = (
     "https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"

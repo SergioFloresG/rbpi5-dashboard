@@ -1,6 +1,7 @@
 (() => {
   const PASO_MS = 600;
   const PAUSA_MS = 2500;
+  const PAUSA_REAL_MS = 2000;
   const REFRESCO_MS = 5 * 60 * 1000;
   const MARCA_MIN = 20;
   const REINTENTOS = 4;
@@ -21,6 +22,7 @@
   let capas = [];
   let actual = 0;
   let timer = null;
+  let ultimoReal = 0;
 
   async function iniciar() {
     let d;
@@ -118,11 +120,12 @@
     const visible = capas.length ? capas[actual].time : null;
     capas.filter((c) => !nuevas.includes(c)).forEach((c) => mapa.removeLayer(c.capa));
     capas = nuevas;
+    ultimoReal = pasados - 1;
     dibujarLinea(pasados);
     actual = capas.findIndex((c) => c.time === visible);
     if (actual < 0) actual = pasados - 1;
     mostrar(actual);
-    timer = setTimeout(avanzar, actual === capas.length - 1 ? PAUSA_MS : PASO_MS);
+    timer = setTimeout(avanzar, espera());
   }
 
   const $ = (id) => document.getElementById(id);
@@ -162,10 +165,15 @@
     $("lt-escala").querySelectorAll("span").forEach((m) => m.classList.toggle("on", +m.dataset.t === t));
   }
 
+  function espera() {
+    if (actual === capas.length - 1) return PAUSA_MS;
+    return actual === ultimoReal ? PAUSA_REAL_MS : PASO_MS;
+  }
+
   function avanzar() {
     actual = (actual + 1) % capas.length;
     mostrar(actual);
-    timer = setTimeout(avanzar, actual === capas.length - 1 ? PAUSA_MS : PASO_MS);
+    timer = setTimeout(avanzar, espera());
   }
 
   iniciar();

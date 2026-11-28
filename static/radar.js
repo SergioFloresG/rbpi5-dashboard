@@ -65,31 +65,64 @@
     setInterval(cargarFrames, REFRESCO_MS);
   }
 
+  const ESPERA_CARGA_MS = 20000;
+  let carga = 0;
+
+  function cargada(c) {
+    return new Promise((ok) => {
+      c.once("load", ok);
+      setTimeout(ok, ESPERA_CARGA_MS);
+    });
+  }
+
   async function cargarFrames() {
     let d;
     try {
       d = await (await fetch("/api/radar")).json();
       if (d.error) throw new Error(d.error);
     } catch (e) {
-      document.getElementById("radar-hora").textContent = "sin datos";
+      if (!capas.length) $("radar-hora").textContent = "sin datos";
       return;
     }
-    clearTimeout(timer);
     const fuente = d.host.includes("rainviewer")
       ? '<a href="https://www.rainviewer.com">RainViewer</a>'
       : '<a href="https://librewxr.net">LibreWXR</a>';
-    capas.forEach((c) => mapa.removeLayer(c.capa));
     const pasados = d.frames.length;
-    capas = d.frames.concat(d.nowcast || []).map((f) => ({
-      time: f.time,
-      capa: capa(`${d.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, {
+    const corte = d.frames[pasados - 1].time;
+    // El pronóstico se recalcula con cada cuadro nuevo: su clave (y URL) cambia para no reutilizarlo.
+    const lista = d.frames.map((f) => ({ time: f.time, clave: `${d.host}${f.path}`, q: "" }))
+      .concat((d.nowcast || []).map((f) => ({ time: f.time, clave: `${d.host}${f.path}?g=${corte}`, q: `?g=${corte}` })));
+    if (lista.length === capas.length && lista.every((f, i) => f.clave === capas[i].clave)) return;
+
+    const turno = ++carga;
+    const previas = new Map(capas.map((c) => [c.clave, c]));
+    const esperas = [];
+    const nuevas = lista.map((f) => {
+      const previa = previas.get(f.clave);
+      if (previa) return previa;
+      const c = capa(`${f.clave.split("?")[0]}/256/{z}/{x}/{y}/2/1_1.png${f.q}`, {
         opacity: 0, maxNativeZoom: 7, maxZoom: 12, className: "radar-frame", attribution: fuente,
-      }).addTo(mapa),
-    }));
+      });
+      esperas.push(cargada(c));
+      c.addTo(mapa);
+      return { time: f.time, clave: f.clave, capa: c };
+    });
+    if (!capas.length) $("radar-hora").textContent = "cargando…";
+    await Promise.all(esperas);
+    if (turno !== carga) {
+      nuevas.filter((c) => !previas.has(c.clave)).forEach((c) => mapa.removeLayer(c.capa));
+      return;
+    }
+
+    clearTimeout(timer);
+    const visible = capas.length ? capas[actual].time : null;
+    capas.filter((c) => !nuevas.includes(c)).forEach((c) => mapa.removeLayer(c.capa));
+    capas = nuevas;
     dibujarLinea(pasados);
-    actual = pasados - 1;
+    actual = capas.findIndex((c) => c.time === visible);
+    if (actual < 0) actual = pasados - 1;
     mostrar(actual);
-    timer = setTimeout(avanzar, PAUSA_MS);
+    timer = setTimeout(avanzar, actual === capas.length - 1 ? PAUSA_MS : PASO_MS);
   }
 
   const $ = (id) => document.getElementById(id);

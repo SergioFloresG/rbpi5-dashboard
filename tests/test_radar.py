@@ -21,7 +21,7 @@ class RadarPronostico(unittest.TestCase):
 
         d = app._radar_armar(fuente(1600), d, 5000, 5000 + app.PRON_ESPERA_SEG)
         self.assertEqual([(f["time"], f["g"]) for f in d["nowcast"]], [(2200, 1600), (2800, 1600), (3400, 1600)])
-        self.assertEqual(app._radar_dirs(d)[2200], ("pron/2200-1600", "/n1", "?g=1600"))
+        self.assertEqual(app._radar_dirs(d)[2200], (None, "/n1", "?g=1600"))
 
     def test_arranque_con_cuadro_recien_publicado_no_muestra_pronostico(self):
         self.assertEqual(app._radar_armar(fuente(1000), None, 5000, 5010)["nowcast"], [])

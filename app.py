@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from astral import LocationInfo, moon, sun
-from flask import Flask, abort, jsonify, send_file, send_from_directory
+from flask import Flask, Response, abort, jsonify, send_file, send_from_directory
 
 from dyson import Dyson
 from ecoflow import EcoFlow
@@ -170,11 +170,11 @@ PRON_ESPERA_SEG = 120
 
 
 def _radar_dirs(d):
-    """Carpeta local, ruta y query de cada cuadro vigente. El pronóstico lleva en el nombre el cuadro
-    real del que parte: al cambiar de generación cambia de carpeta y la anterior se borra."""
+    """Carpeta local, ruta y query de cada cuadro vigente. El pronóstico no tiene carpeta: no se
+    guarda, cada petición va a la fuente."""
     dirs = {f["time"]: (os.path.join("real", str(f["time"])), f["path"], "?r=1") for f in d["frames"]}
     for f in d["nowcast"]:
-        dirs.setdefault(f["time"], (os.path.join("pron", f"{f['time']}-{f['g']}"), f["path"], f"?g={f['g']}"))
+        dirs.setdefault(f["time"], (None, f["path"], f"?g={f['g']}"))
     return dirs
 
 
@@ -233,8 +233,8 @@ def radar():
 
 @app.get("/api/radar/tile/<int:t>/<int:z>/<int:x>/<int:y>.png")
 def radar_tile(t, z, x, y):
-    """Tile del radar con copia local: se descarga una vez y después se sirve del archivo.
-    Si el archivo se borra, se vuelve a descargar."""
+    """Tile del radar. Los cuadros reales tienen copia local: se descargan una vez y después se sirven
+    del archivo (si se borra, se vuelve a descargar). El pronóstico siempre se pide a la fuente."""
     try:
         d = _radar_datos()
     except Exception:
@@ -243,21 +243,25 @@ def radar_tile(t, z, x, y):
     if not cuadro:
         abort(404)
     carpeta, ruta, q = cuadro
-    archivo = os.path.join(RADAR_CACHE, carpeta, f"{z}-{x}-{y}.png")
-    if not os.path.isfile(archivo):
-        req = urllib.request.Request(f"{d['host']}{ruta}/256/{z}/{x}/{y}/2/1_1.png{q}",
-                                     headers={"User-Agent": "pi-dashboard"})
-        try:
-            with urllib.request.urlopen(req, timeout=15) as r:
-                datos = r.read()
-        except Exception:
-            abort(502)
+    archivo = carpeta and os.path.join(RADAR_CACHE, carpeta, f"{z}-{x}-{y}.png")
+    if archivo and os.path.isfile(archivo):
+        return send_file(archivo, mimetype="image/png", max_age=0)
+    if not archivo:
+        q += f"&t={time.time_ns()}"  # evita la caché de 5 min de la fuente
+    req = urllib.request.Request(f"{d['host']}{ruta}/256/{z}/{x}/{y}/2/1_1.png{q}",
+                                 headers={"User-Agent": "pi-dashboard"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            datos = r.read()
+    except Exception:
+        abort(502)
+    if archivo:
         os.makedirs(os.path.dirname(archivo), exist_ok=True)
         tmp = f"{archivo}.{os.getpid()}.{time.time_ns()}.tmp"
         with open(tmp, "wb") as f:
             f.write(datos)
         os.replace(tmp, archivo)
-    return send_file(archivo, mimetype="image/png", max_age=0)
+    return Response(datos, mimetype="image/png", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/bateria")

@@ -2,7 +2,7 @@
   const PASO_MS = 600;
   const PAUSA_MS = 2500;
   const REFRESCO_MS = 5 * 60 * 1000;
-  const MAX_FRAMES = 8;
+  const MARCA_MIN = 20;
   const REINTENTOS = 4;
 
   function capa(url, opts) {
@@ -79,22 +79,54 @@
       ? '<a href="https://www.rainviewer.com">RainViewer</a>'
       : '<a href="https://librewxr.net">LibreWXR</a>';
     capas.forEach((c) => mapa.removeLayer(c.capa));
-    capas = d.frames.slice(-MAX_FRAMES).map((f) => ({
+    const pasados = d.frames.length;
+    capas = d.frames.concat(d.nowcast || []).map((f) => ({
       time: f.time,
       capa: capa(`${d.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, {
         opacity: 0, maxNativeZoom: 7, maxZoom: 12, className: "radar-frame", attribution: fuente,
       }).addTo(mapa),
     }));
-    actual = capas.length - 1;
+    dibujarLinea(pasados);
+    actual = pasados - 1;
     mostrar(actual);
     timer = setTimeout(avanzar, PAUSA_MS);
   }
 
+  const $ = (id) => document.getElementById(id);
+  const hhmm = (seg) => new Date(seg * 1000)
+    .toLocaleTimeString("es-MX", { timeZone: zona, hour: "2-digit", minute: "2-digit", hour12: false });
+  const pos = (seg) => {
+    const ini = capas[0].time, fin = capas[capas.length - 1].time;
+    return `${Math.min(1, Math.max(0, (seg - ini) / ((fin - ini) || 1))) * 100}%`;
+  };
+
+  function dibujarLinea(pasados) {
+    const corte = capas[pasados - 1].time;
+    $("lt-pas").style.width = pos(corte);
+    $("lt-fut").style.left = pos(corte);
+    const marcas = [];
+    for (let t = capas[0].time; t <= capas[capas.length - 1].time; t += MARCA_MIN * 60) {
+      marcas.push(`<span data-t="${t}" class="${t > corte ? "fut" : ""}" style="left:${pos(t)}">${hhmm(t)}</span>`);
+    }
+    $("lt-escala").innerHTML = marcas.join("");
+    marcarAhora();
+    $("linea").hidden = false;
+  }
+
+  function marcarAhora() {
+    if (!capas.length) return;
+    const ahora = Date.now() / 1000;
+    $("lt-ahora").style.left = pos(ahora);
+    $("lt-ahora-txt").textContent = hhmm(ahora);
+  }
+  setInterval(marcarAhora, 15000);
+
   function mostrar(i) {
     capas.forEach((c, j) => c.capa.setOpacity(j === i ? 0.75 : 0));
-    const t = new Date(capas[i].time * 1000);
-    document.getElementById("radar-hora").textContent =
-      t.toLocaleTimeString("es-MX", { timeZone: zona, hour: "2-digit", minute: "2-digit", hour12: false });
+    const t = capas[i].time;
+    $("radar-hora").textContent = hhmm(t);
+    $("lt-punto").style.left = pos(t);
+    $("lt-escala").querySelectorAll("span").forEach((m) => m.classList.toggle("on", +m.dataset.t === t));
   }
 
   function avanzar() {

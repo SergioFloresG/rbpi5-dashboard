@@ -3,7 +3,7 @@
 Dashboard a pantalla completa para Raspberry Pi 5 con Ubuntu en modo terminal y un monitor Dell U2913WM (2560x1080).
 La pantalla se divide en dos paneles: lado a lado en horizontal (1280x1080 c/u) o apilados si el monitor está girado a vertical (1080x1280 c/u).
 
-- **Panel principal:** radar animado de fondo, reloj, clima, sensación térmica, humedad, viento, índice UV, calidad del aire, visibilidad, presión, sol y luna.
+- **Panel principal:** radar animado de fondo (2 h pasadas + pronóstico a ~1 h) con línea de tiempo bajo el reloj, reloj, clima, sensación térmica, humedad, viento, índice UV, calidad del aire, visibilidad, presión, sol y luna.
 - **Segundo panel:** arriba, tarjetas de la batería EcoFlow Delta 3 Plus, del UPS y de los purificadores Dyson (si están configurados); el resto, por definir.
 
 Fuentes, sin API key: [Open-Meteo](https://open-meteo.com) (clima y calidad del aire), [LibreWXR](https://librewxr.net) (radar, con lluvia estimada por satélite donde no hay radar) y Esri Canvas (mapa base). La luna y el sol se calculan localmente con `astral`.

@@ -37,6 +37,24 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 .cabecera, .pron, .tarjetas, .pie { position: relative; z-index: 2; }
 
 .cabecera { display: flex; justify-content: space-between; align-items: center; }
+.linea { position: absolute; top: 100%; left: 0; right: 234px; margin-top: 18px; padding: 30px 34px 10px;
+  background: rgba(var(--fondo-rgb), .45); border: 1px solid var(--borde); border-radius: 14px; backdrop-filter: blur(3px);
+  font-variant-numeric: tabular-nums; }
+.linea[hidden] { display: none; }
+.lt-pista { position: relative; height: 6px; }
+.lt-pista i { position: absolute; top: 0; height: 100%; }
+.lt-pas { left: 0; border-radius: 3px; background: var(--tenue); opacity: .55; }
+.lt-fut { right: 0; background: repeating-linear-gradient(90deg, #4ea8ff 0 6px, transparent 6px 10px); }
+.lt-ahora { position: absolute; top: -6px; width: 3px; height: 18px; margin-left: -1.5px; border-radius: 2px; background: #ff4d4d; }
+.lt-ahora b { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 2px;
+  font-size: 13px; font-weight: 500; color: #ff4d4d; white-space: nowrap; }
+.lt-punto { position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;
+  background: #4ea8ff; border: 3px solid #fff; box-shadow: 0 0 0 5px rgba(78,168,255,.3); transition: left .25s; }
+.lt-escala { position: relative; height: 30px; margin-top: 8px; }
+.lt-escala span { position: absolute; top: 0; transform: translateX(-50%); padding-top: 10px; font-size: 13px; color: var(--tenue); white-space: nowrap; }
+.lt-escala span::before { content: ""; position: absolute; top: 0; left: 50%; width: 1px; height: 6px; background: currentColor; }
+.lt-escala span.fut { color: #4ea8ff; }
+.lt-escala span.on { color: var(--texto); font-weight: 600; }
 .hora { font-size: 150px; font-weight: 200; line-height: 1; letter-spacing: -4px; font-variant-numeric: tabular-nums; }
 .hora .seg { font-size: 56px; color: var(--tenue); margin-left: 8px; letter-spacing: 0; }
 .fecha { font-size: 30px; color: var(--sub); margin-top: 8px; }

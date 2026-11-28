@@ -27,10 +27,8 @@ FORECAST = (
     "&current=temperature_2m,apparent_temperature,relative_humidity_2m,"
     "wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,uv_index,"
     "pressure_msl,weather_code,is_day"
-    "&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min,"
-    "weather_code,precipitation_probability_max"
-    "&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day"
-    "&timezone={tz}&forecast_days=5&forecast_hours=8"
+    "&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min"
+    "&timezone={tz}&forecast_days=1"
 )
 AIRE = (
     "https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}"
@@ -80,7 +78,7 @@ def _datos():
     except Exception:
         a = {}
     tz = ZoneInfo(TZ)
-    c, d, h = f["current"], f["daily"], f["hourly"]
+    c, d = f["current"], f["daily"]
     return {
         "ciudad": CIUDAD,
         "zona": TZ,
@@ -110,27 +108,6 @@ def _datos():
             "pm2_5": a.get("pm2_5"),
             "pm10": a.get("pm10"),
         },
-        "horas": [
-            {
-                "hora": t,
-                "temp": h["temperature_2m"][i],
-                "lluvia_prob": h["precipitation_probability"][i],
-                "lluvia_mm": h["precipitation"][i],
-                "codigo": h["weather_code"][i],
-                "es_dia": bool(h["is_day"][i]),
-            }
-            for i, t in enumerate(h["time"])
-        ],
-        "dias": [
-            {
-                "fecha": t,
-                "max": d["temperature_2m_max"][i],
-                "min": d["temperature_2m_min"][i],
-                "lluvia_prob": d["precipitation_probability_max"][i],
-                "codigo": d["weather_code"][i],
-            }
-            for i, t in enumerate(d["time"]) if i
-        ],
         "luna": _luna(date.fromisoformat(d["time"][0]), tz),
     }
 

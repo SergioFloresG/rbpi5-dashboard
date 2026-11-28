@@ -34,7 +34,7 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
   background: linear-gradient(var(--fondo) 0%, rgba(var(--fondo-rgb),.85) 45%, rgba(var(--fondo-rgb),0) 100%); }
 .izq::after { content: ""; position: absolute; inset: auto 0 0 0; height: 380px; z-index: 1; pointer-events: none;
   background: linear-gradient(rgba(var(--fondo-rgb),0) 0%, rgba(var(--fondo-rgb),.8) 40%, var(--fondo) 100%); }
-.cabecera, .pron, .tarjetas, .pie { position: relative; z-index: 2; }
+.cabecera, .tarjetas, .pie { position: relative; z-index: 2; }
 
 .cabecera { display: flex; justify-content: space-between; align-items: center; }
 .hora { font-size: 150px; font-weight: 200; line-height: 1; letter-spacing: -4px; font-variant-numeric: tabular-nums; }
@@ -45,19 +45,6 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; cursor: none;
 .temp { font-size: 96px; font-weight: 300; line-height: 1; }
 .desc { font-size: 26px; color: var(--desc); margin-top: 4px; }
 .maxmin { font-size: 22px; color: var(--tenue); margin-top: 4px; }
-
-.pron { align-self: flex-end; width: 210px; margin-top: 14px; display: flex; flex-direction: column; padding: 2px 14px;
-  background: rgba(var(--fondo-rgb), .45); border: 1px solid var(--borde); border-radius: 14px; backdrop-filter: blur(3px); }
-.cabecera + .pron { margin-top: 18px; }
-.pron[hidden] { display: none; }
-.ph { height: 50px; display: grid; grid-template-columns: 58px 40px 1fr; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
-.ph + .ph { border-top: 1px solid var(--borde); }
-.ph .h { font-size: 17px; color: var(--sub); }
-.ph .h em { display: block; font-style: normal; font-size: 11px; line-height: 1; color: var(--etiqueta); text-transform: uppercase; letter-spacing: .5px; }
-.ph .ic, .ph .ic svg { width: 40px; height: 40px; }
-.ph .t { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; font-size: 22px; line-height: 1.05; white-space: nowrap; }
-.ph .t small { font-size: 16px; color: var(--tenue); }
-.ph .p { font-size: 12px; line-height: 1.1; color: #4ea8ff; }
 
 .tarjetas { margin-top: auto; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px;

@@ -148,7 +148,7 @@ def radar():
             r = _get(RADAR_URL)
             _radar["data"] = {
                 "host": r["host"],
-                "frames": r["radar"]["past"] + r["radar"].get("nowcast", []),
+                "frames": r["radar"]["past"],
             }
             _radar["t"] = time.time()
         except Exception as e:

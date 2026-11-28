@@ -166,15 +166,18 @@ _radar = {"t": 0, "data": None}
 
 @app.get("/api/radar")
 def radar():
-    if not _radar["data"] or time.time() - _radar["t"] > 300:
+    ahora = time.time()
+    d = _radar["data"]
+    # Solo se consulta cuando ya debería existir un cuadro nuevo (uno cada 10 min), y a lo más una vez por minuto.
+    if not d or (ahora - d["frames"][-1]["time"] > 600 and ahora - _radar["t"] > 60):
         try:
+            _radar["t"] = ahora
             r = _get(RADAR_URL)
             _radar["data"] = {
                 "host": r["host"],
                 "frames": r["radar"]["past"],
                 "nowcast": r["radar"].get("nowcast") or [],
             }
-            _radar["t"] = time.time()
         except Exception as e:
             if not _radar["data"]:
                 return jsonify({"error": str(e)}), 502

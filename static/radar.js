@@ -2,7 +2,7 @@
   const PASO_MS = 600;
   const PAUSA_MS = 2500;
   const PAUSA_REAL_MS = 2000;
-  const REFRESCO_MS = 5 * 60 * 1000;
+  const REFRESCO_MS = 60 * 1000;
   const MARCA_MIN = 20;
   const REINTENTOS = 4;
 

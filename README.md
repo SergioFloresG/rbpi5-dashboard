@@ -3,7 +3,7 @@
 Dashboard a pantalla completa para Raspberry Pi 5 con Ubuntu en modo terminal y un monitor Dell U2913WM (2560x1080).
 La pantalla se divide en dos paneles: lado a lado en horizontal (1280x1080 c/u) o apilados si el monitor está girado a vertical (1080x1280 c/u).
 
-- **Panel principal:** radar animado de fondo, reloj, clima, sensación térmica, humedad, viento, índice UV, calidad del aire, visibilidad, presión, sol y luna.
+- **Panel principal:** radar animado de fondo (2 h pasadas + pronóstico a ~1 h) con línea de tiempo bajo el reloj, reloj, clima, sensación térmica, humedad, viento, índice UV, calidad del aire, visibilidad, presión, sol y luna.
 - **Segundo panel:** arriba, tarjetas de la batería EcoFlow Delta 3 Plus, del UPS y de los purificadores Dyson (si están configurados); el resto, por definir.
 
 Fuentes, sin API key: [Open-Meteo](https://open-meteo.com) (clima y calidad del aire), [LibreWXR](https://librewxr.net) (radar, con lluvia estimada por satélite donde no hay radar) y Esri Canvas (mapa base). La luna y el sol se calculan localmente con `astral`.
@@ -40,6 +40,7 @@ sudo systemctl restart pi-dashboard
 | `DASH_PORT` | Puerto (3000) |
 | `DASH_CACHE_SEG` | Segundos de caché del clima (900) |
 | `DASH_RADAR_ZOOM` | Zoom del radar (máx. 7) |
+| `DASH_RADAR_CACHE` | Carpeta de la copia local de tiles definitivos del radar (`radar-cache/`); el pronóstico y el cuadro real recién publicado no se guardan. Borrar un archivo fuerza su descarga |
 | `DASH_TEMA` | `AUTO` (claro de amanecer a anochecer), `BLACK` o `WHITE` |
 | `ECOFLOW_EMAIL`, `ECOFLOW_PASSWORD` | Cuenta de la app EcoFlow para la tarjeta de batería (vacío = tarjeta oculta) |
 | `ECOFLOW_SN` | Número de serie de la batería (app EcoFlow > dispositivo > Ajustes > Información) |

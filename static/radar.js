@@ -90,9 +90,9 @@
       ? '<a href="https://www.rainviewer.com">RainViewer</a>'
       : '<a href="https://librewxr.net">LibreWXR</a>';
     const pasados = d.frames.length;
-    // Los tiles se piden al servidor local, que guarda copia en disco. El pronóstico se recalcula
-    // con cada cuadro nuevo: su clave (y URL) cambia para no reutilizarlo.
-    const lista = d.frames.map((f) => ({ time: f.time, clave: `real/${f.time}` }))
+    // Los tiles se piden al servidor local, que guarda copia en disco de los definitivos. La clave (y URL)
+    // cambia cuando el pronóstico se recalcula o un cuadro real pasa a definitivo, para volver a pedirlo.
+    const lista = d.frames.map((f) => ({ time: f.time, clave: `real/${f.time}${f.firme === false ? "-p" : ""}` }))
       .concat((d.nowcast || []).map((f) => ({ time: f.time, clave: `pron/${f.time}-${f.g}` })));
     if (lista.length === capas.length && lista.every((f, i) => f.clave === capas[i].clave)) return;
 

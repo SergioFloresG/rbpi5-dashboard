@@ -40,7 +40,7 @@
     const estilo = () => (document.documentElement.dataset.tema === "claro" ? "Light" : "Dark");
     const url = (tipo) => `${ESRI}World_${estilo()}_Gray_${tipo}/MapServer/tile/{z}/{y}/{x}`;
     const base = capa(url("Base"), {
-      maxZoom: 16, attribution: "Esri, HERE, Garmin, © OpenStreetMap · LibreWXR",
+      maxZoom: 16, attribution: "Esri, HERE, Garmin, © OpenStreetMap",
     }).addTo(mapa);
     mapa.createPane("etiquetas").style.zIndex = 450;
     const etiquetas = capa(url("Reference"), {
@@ -75,11 +75,14 @@
       return;
     }
     clearTimeout(timer);
+    const fuente = d.host.includes("rainviewer")
+      ? '<a href="https://www.rainviewer.com">RainViewer</a>'
+      : '<a href="https://librewxr.net">LibreWXR</a>';
     capas.forEach((c) => mapa.removeLayer(c.capa));
     capas = d.frames.slice(-MAX_FRAMES).map((f) => ({
       time: f.time,
       capa: capa(`${d.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, {
-        opacity: 0, maxNativeZoom: 7, maxZoom: 12, className: "radar-frame",
+        opacity: 0, maxNativeZoom: 7, maxZoom: 12, className: "radar-frame", attribution: fuente,
       }).addTo(mapa),
     }));
     actual = capas.length - 1;

@@ -163,16 +163,18 @@ def clima():
     return jsonify(_cache["data"])
 
 
-_radar = {"t": 0, "data": None}
+_radar = {"t": 0, "data": None, "visto": 0, "fuente": None}
+# Tras publicarse un cuadro real, la fuente sigue entregando un rato tiles del pronóstico anterior;
+# pedirlos en ese lapso mezcla dos pronósticos (cortes rectos). Mientras, se conserva el anterior.
+PRON_ESPERA_SEG = 120
 
 
 def _radar_dirs(d):
-    """Carpeta local de cada cuadro vigente. El pronóstico lleva el último cuadro real en el nombre:
-    al publicarse un cuadro nuevo cambia de carpeta y la anterior se borra."""
-    corte = d["frames"][-1]["time"]
-    dirs = {f["time"]: (os.path.join("real", str(f["time"])), f["path"], "") for f in d["frames"]}
+    """Carpeta local, ruta y query de cada cuadro vigente. El pronóstico lleva en el nombre el cuadro
+    real del que parte: al cambiar de generación cambia de carpeta y la anterior se borra."""
+    dirs = {f["time"]: (os.path.join("real", str(f["time"])), f["path"], "?r=1") for f in d["frames"]}
     for f in d["nowcast"]:
-        dirs.setdefault(f["time"], (os.path.join("pron", f"{f['time']}-{corte}"), f["path"], f"?g={corte}"))
+        dirs.setdefault(f["time"], (os.path.join("pron", f"{f['time']}-{f['g']}"), f["path"], f"?g={f['g']}"))
     return dirs
 
 
@@ -187,6 +189,16 @@ def _radar_limpiar(d):
                 shutil.rmtree(os.path.join(base, nombre), ignore_errors=True)
 
 
+def _radar_armar(r, previo, visto, ahora):
+    """Combina la lista de la fuente con el pronóstico vigente: el nuevo se adopta cuando ya es estable."""
+    corte = r["radar"]["past"][-1]["time"]
+    if ahora - visto >= PRON_ESPERA_SEG:
+        pron = [{"time": f["time"], "path": f["path"], "g": corte} for f in r["radar"].get("nowcast") or []]
+    else:
+        pron = [f for f in (previo or {}).get("nowcast", []) if f["time"] > corte]
+    return {"host": r["host"], "frames": r["radar"]["past"], "nowcast": pron}
+
+
 def _radar_datos():
     ahora = time.time()
     d = _radar["data"]
@@ -195,15 +207,19 @@ def _radar_datos():
         _radar["t"] = ahora
         try:
             r = _get(RADAR_URL)
-            _radar["data"] = {
-                "host": r["host"],
-                "frames": r["radar"]["past"],
-                "nowcast": r["radar"].get("nowcast") or [],
-            }
-            _radar_limpiar(_radar["data"])
+            if not d or r["radar"]["past"][-1]["time"] != d["frames"][-1]["time"]:
+                # Al arrancar no se sabe cuándo se publicó: solo un cuadro reciente obliga a esperar.
+                reciente = d or ahora - r["radar"]["past"][-1]["time"] < 300
+                _radar["visto"] = ahora if reciente else 0
+            _radar["fuente"] = r
         except Exception:
-            if not _radar["data"]:
+            if not d:
                 raise
+    if _radar["fuente"]:
+        nuevo = _radar_armar(_radar["fuente"], d, _radar["visto"], ahora)
+        if nuevo != d:
+            _radar["data"] = nuevo
+            _radar_limpiar(nuevo)
     return _radar["data"]
 
 

@@ -90,11 +90,10 @@
       ? '<a href="https://www.rainviewer.com">RainViewer</a>'
       : '<a href="https://librewxr.net">LibreWXR</a>';
     const pasados = d.frames.length;
-    const corte = d.frames[pasados - 1].time;
     // Los tiles se piden al servidor local, que guarda copia en disco. El pronóstico se recalcula
     // con cada cuadro nuevo: su clave (y URL) cambia para no reutilizarlo.
     const lista = d.frames.map((f) => ({ time: f.time, clave: `real/${f.time}` }))
-      .concat((d.nowcast || []).map((f) => ({ time: f.time, clave: `pron/${f.time}-${corte}` })));
+      .concat((d.nowcast || []).map((f) => ({ time: f.time, clave: `pron/${f.time}-${f.g}` })));
     if (lista.length === capas.length && lista.every((f, i) => f.clave === capas[i].clave)) return;
 
     const turno = ++carga;

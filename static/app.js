@@ -165,8 +165,8 @@ function pronostico(horas, dias) {
   $("dias").hidden = false;
   const alto = document.querySelector(".tarjetas").getBoundingClientRect().top
     - $("pron").getBoundingClientRect().bottom - 40;
-  const n = alto >= 4 * PRON_FILA ? 4 : 3;
-  $("dias").hidden = !ds.length;
+  const n = alto >= 4 * PRON_FILA ? 4 : alto >= 3 * PRON_FILA ? 3 : 0;
+  $("dias").hidden = !n || !ds.length;
   $("dias").innerHTML = ds.slice(0, n).map((x) =>
     filaPron(diaSem(x.fecha), wmo(x.codigo), true,
       `<span>${Math.round(x.max)}° <small>${Math.round(x.min)}°</small></span>`, x.lluvia_prob)).join("");

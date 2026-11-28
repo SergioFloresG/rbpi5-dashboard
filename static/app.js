@@ -135,6 +135,43 @@ function reloj() {
   aplicarTema();
 }
 
+const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const PRON_FILA = 50;
+const PRON_HORAS = 6;
+
+function filaPron(etiqueta, w, dia, temp, prob) {
+  return `<div class="ph">
+    <span class="h">${etiqueta}</span>
+    <div class="ic" title="${w[0]}">${iconoSVG(w[1], dia)}</div>
+    <span class="t">${prob ? `<span class="p">${prob}%</span>` : ""}${temp}</span>
+  </div>`;
+}
+
+function pronostico(horas, dias) {
+  const ahora = new Date().toLocaleString("sv-SE", { timeZone: zona }).slice(0, 13).replace(" ", "T");
+  const diaSem = (f) => DIAS[new Date(`${f}T12:00`).getDay()];
+  const wmo = (c) => WMO[c] || ["—", "nublado"];
+
+  const hs = horas.filter((x) => x.hora.slice(0, 13) > ahora).slice(0, PRON_HORAS);
+  $("pron").hidden = !hs.length;
+  $("pron").innerHTML = hs.map((x) => {
+    const h = x.hora.slice(11, 13);
+    const et = `${h === "00" ? `<em>${diaSem(x.hora.slice(0, 10))}</em>` : ""}${h}:00`;
+    return filaPron(et, wmo(x.codigo), x.es_dia, `${Math.round(x.temp)}°`, x.lluvia_prob);
+  }).join("");
+
+  const hoy = ahora.slice(0, 10);
+  const ds = dias.filter((x) => x.fecha > hoy);
+  $("dias").hidden = false;
+  const alto = document.querySelector(".tarjetas").getBoundingClientRect().top
+    - $("pron").getBoundingClientRect().bottom - 40;
+  const n = alto >= 4 * PRON_FILA ? 4 : alto >= 3 * PRON_FILA ? 3 : 0;
+  $("dias").hidden = !n || !ds.length;
+  $("dias").innerHTML = ds.slice(0, n).map((x) =>
+    filaPron(diaSem(x.fecha), wmo(x.codigo), true,
+      `<span>${Math.round(x.max)}° <small>${Math.round(x.min)}°</small></span>`, x.lluvia_prob)).join("");
+}
+
 let timerClima = null;
 async function clima() {
   clearTimeout(timerClima);
@@ -184,6 +221,8 @@ async function clima() {
     const hl = (x) => (x ? x.hora + (x.manana ? "<small>mañana</small>" : "") : "—");
     $("luna-sale").innerHTML = hl(d.luna.salida);
     $("luna-pone").innerHTML = hl(d.luna.puesta);
+
+    pronostico(d.horas || [], d.dias || []);
 
     $("pie").textContent = `Actualizado ${d.actualizado.slice(11, 16)} · Open-Meteo`;
   } catch (e) {
